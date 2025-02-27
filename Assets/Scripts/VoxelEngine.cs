@@ -4,6 +4,8 @@ using Sirenix.OdinInspector;
 
 using UnityEngine;
 
+using VoxelEngine.DataGenerators;
+
 namespace DefaultNamespace
 {
 	public class VoxelEngine : MonoBehaviour
@@ -20,8 +22,8 @@ namespace DefaultNamespace
 		[SerializeField]
 		private bool _showDebug = true;
 
-		private ITerrainGenerator _terrainGenerator;
-		private ITerrainData _terrainData;
+		private IVoxelMeshGenerator _voxelMeshGenerator;
+		private IVoxelData _voxelData;
 
 		[SerializeField]
 		private MeshFilter _meshFilter;
@@ -40,7 +42,7 @@ namespace DefaultNamespace
 
 		private void OnDrawGizmos()
 		{
-			DrawDebugTerrainData(_terrainData);
+			DrawDebugTerrainData(_voxelData);
 		}
 		#endregion
 
@@ -55,8 +57,8 @@ namespace DefaultNamespace
 
 			// Cleanup the old data and generate new ones
 			Cleanup();
-			_terrainGenerator = new GreedyCubeTerrainGenerator();
-			_terrainData = new PerlinNoise3DGenerator();
+			_voxelMeshGenerator = new GreedyCubeVoxelMeshGenerator();
+			_voxelData = new Simple3DNoiseVoxelDataGenerator();
 
 			// Generate the terrain
 			GenerateTerrain();
@@ -70,8 +72,8 @@ namespace DefaultNamespace
 		#region Private Methods
 		private void Cleanup()
 		{
-			_terrainData = null;
-			_terrainGenerator = null;
+			_voxelData = null;
+			_voxelMeshGenerator = null;
 
 			if (_meshFilter.sharedMesh != null)
 			{
@@ -90,13 +92,13 @@ namespace DefaultNamespace
 
 		private void GenerateTerrain()
 		{
-			_terrainData.Size = _size;
-			_terrainData.GenerateData();
+			_voxelData.Size = _size;
+			_voxelData.GenerateData();
 
-			_meshFilter.sharedMesh = _terrainGenerator.GenerateTerrain(_terrainData);
+			_meshFilter.sharedMesh = _voxelMeshGenerator.GenerateMesh(_voxelData);
 		}
 
-		private void DrawDebugTerrainData(ITerrainData data)
+		private void DrawDebugTerrainData(IVoxelData data)
 		{
 			if (data == null || !data.IsValid)
 			{

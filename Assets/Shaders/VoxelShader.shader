@@ -1,4 +1,4 @@
-Shader "Example/URPUnlitShaderColor"
+Shader "VoxelEngine/URP Basic Voxel"
 {
     Properties
     { 

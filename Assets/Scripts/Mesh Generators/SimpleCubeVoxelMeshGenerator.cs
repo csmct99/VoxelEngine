@@ -3,17 +3,17 @@ using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-public class SimpleCubeTerrainGenerator : ITerrainGenerator
+public class SimpleCubeVoxelMeshGenerator : IVoxelMeshGenerator
 {
 	private int _chunkSize = 128;
 
-	public Mesh GenerateTerrain(ITerrainData data)
+	public Mesh GenerateMesh(IVoxelData data)
 	{
 		Mesh mesh = GenerateChunk(data);
 		return mesh;
 	}
 
-	private Mesh GenerateChunk(ITerrainData data)
+	private Mesh GenerateChunk(IVoxelData data)
 	{
 		int maxTriangles = 6 * 2 * 3 * _chunkSize * _chunkSize * _chunkSize; // 36 triangles per cube
 		int[] triangles = new int[maxTriangles];
@@ -70,10 +70,10 @@ public class SimpleCubeTerrainGenerator : ITerrainGenerator
 	/// <param name="position"></param>
 	/// <param name="vertices"></param>
 	/// <param name="triangles"></param>
-	private void EncodeCube(ref int meshDataStreamPointer, Vector3Int position, ref Vector3[] vertices, ref int[] triangles, ref Vector3[] normals, ITerrainData terrainData)
+	private void EncodeCube(ref int meshDataStreamPointer, Vector3Int position, ref Vector3[] vertices, ref int[] triangles, ref Vector3[] normals, IVoxelData voxelData)
 	{
 		// +Y (Top)
-		if (terrainData.IsEmpty(position.x, position.y + 1, position.z))
+		if (voxelData.IsEmpty(position.x, position.y + 1, position.z))
 		{
 			EncodeTriangle(ref meshDataStreamPointer, ref vertices, ref triangles, ref normals, position, new Vector3Int(1, 1, 1), new Vector3Int(1, 1, 0), new Vector3Int(0, 1, 0));
 
@@ -81,7 +81,7 @@ public class SimpleCubeTerrainGenerator : ITerrainGenerator
 		}
 
 		// -Y (Bottom)
-		if (terrainData.IsEmpty(position.x, position.y - 1, position.z))
+		if (voxelData.IsEmpty(position.x, position.y - 1, position.z))
 		{
 			EncodeTriangle(ref meshDataStreamPointer, ref vertices, ref triangles, ref normals, position, new Vector3Int(0, 0, 0), new Vector3Int(1, 0, 0), new Vector3Int(1, 0, 1));
 
@@ -89,7 +89,7 @@ public class SimpleCubeTerrainGenerator : ITerrainGenerator
 		}
 
 		// +X (Right)
-		if (terrainData.IsEmpty(position.x + 1, position.y, position.z))
+		if (voxelData.IsEmpty(position.x + 1, position.y, position.z))
 		{
 			EncodeTriangle(ref meshDataStreamPointer, ref vertices, ref triangles, ref normals, position, new Vector3Int(1, 0, 0), new Vector3Int(1, 1, 0), new Vector3Int(1, 1, 1));
 
@@ -97,7 +97,7 @@ public class SimpleCubeTerrainGenerator : ITerrainGenerator
 		}
 
 		// -X (Left)
-		if (terrainData.IsEmpty(position.x - 1, position.y, position.z))
+		if (voxelData.IsEmpty(position.x - 1, position.y, position.z))
 		{
 			EncodeTriangle(ref meshDataStreamPointer, ref vertices, ref triangles, ref normals, position, new Vector3Int(0, 1, 1), new Vector3Int(0, 1, 0), new Vector3Int(0, 0, 0));
 
@@ -105,7 +105,7 @@ public class SimpleCubeTerrainGenerator : ITerrainGenerator
 		}
 
 		// +Z (Front)
-		if (terrainData.IsEmpty(position.x, position.y, position.z + 1))
+		if (voxelData.IsEmpty(position.x, position.y, position.z + 1))
 		{
 			EncodeTriangle(ref meshDataStreamPointer, ref vertices, ref triangles, ref normals, position, new Vector3Int(0, 0, 1), new Vector3Int(1, 0, 1), new Vector3Int(1, 1, 1));
 
@@ -113,7 +113,7 @@ public class SimpleCubeTerrainGenerator : ITerrainGenerator
 		}
 
 		// -Z (Back)
-		if (terrainData.IsEmpty(position.x, position.y, position.z - 1))
+		if (voxelData.IsEmpty(position.x, position.y, position.z - 1))
 		{
 			EncodeTriangle(ref meshDataStreamPointer, ref vertices, ref triangles, ref normals, position, new Vector3Int(1, 1, 0), new Vector3Int(1, 0, 0), new Vector3Int(0, 0, 0));
 

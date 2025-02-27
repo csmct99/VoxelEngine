@@ -4,19 +4,20 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-public class GreedyCubeTerrainGenerator : ITerrainGenerator
+public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 {
-	private int _chunkSize = 128;
+	private int _chunkSize = 128; //TODO: This needs to actually get used to segment meshes, right now its half baked
 
-	public Mesh GenerateTerrain(ITerrainData data)
+	public Mesh GenerateMesh(IVoxelData data)
 	{
 		_chunkSize = data.Size;
 		Mesh mesh = GenerateChunk(data);
 		return mesh;
 	}
 
-	private Mesh GenerateChunk(ITerrainData data)
+	private Mesh GenerateChunk(IVoxelData data) //TODO: Actually make this a chunk, not the whole data set
 	{
+		//TODO: Initializing such a potentially huge data set is not ideal. This should be done in a more dynamic way. Maybe I swap to using Lists in the end.
 		int arraySize = 3 * 6 * 2 * _chunkSize * _chunkSize * _chunkSize; // 36 triangles per cube
 
 		MeshBuffer buffer = new(arraySize );
@@ -29,13 +30,13 @@ public class GreedyCubeTerrainGenerator : ITerrainGenerator
 		Mesh mesh = new();
 		mesh.name = $"Chunk Mesh ({_chunkSize}x{_chunkSize}x{_chunkSize})";
 
-		mesh.indexFormat = IndexFormat.UInt32; // 4B vertices allowed on 32-bit. Long term this shouldnt be needed but for early proto its useful.
+		mesh.indexFormat = IndexFormat.UInt32; // 4B vertices allowed on unsigned 32-bit. Long term this shouldnt be needed but for early proto its useful.
 
 		mesh.vertices = buffer.Vertices;
 		mesh.triangles = buffer.Triangles;
 		mesh.normals = buffer.Normals;
 
-		mesh.hideFlags = HideFlags.DontSave;
+		mesh.hideFlags = HideFlags.DontSave; // Dont save this to the scene, its a temporary mesh meant to be manually managed
 
 		return mesh;
 	}
@@ -70,20 +71,39 @@ public class GreedyCubeTerrainGenerator : ITerrainGenerator
 			Array.Resize(ref Normals, DataStreamPointer);
 		}
 	}
-
+	
 	private enum PlaneAxis
 	{
-		YZ,
-		XZ,
+		/// <summary>
+		/// Left / Right
+		/// </summary>
+		YZ, 
+		
+		/// <summary>
+		/// Top / Bottom
+		/// </summary>
+		XZ, 
+		
+		/// <summary>
+		/// Front / Back
+		/// </summary>
 		XY
 	}
 
-	private bool IsSolidAlongSlice(ITerrainData terrainData, PlaneAxis axis, int localX, int localY, int layerDepth)
+	/// <summary>
+	/// Check if a voxel is <see cref="IVoxelData.IsSolid(int, int, int)">solid</see> along a slice of a plane
+	/// </summary>
+	private bool IsSolidAlongSlice(IVoxelData voxelData, PlaneAxis axis, int localX, int localY, int layerDepth)
 	{
 		Vector3Int terrainCoord = ConvertAxisSlicePositionToTerrainCoord(axis, localX, localY, layerDepth);
-		return terrainData.IsSolid(terrainCoord.x, terrainCoord.y, terrainCoord.z);
+		return voxelData.IsSolid(terrainCoord.x, terrainCoord.y, terrainCoord.z);
 	}
 
+	/// <summary>
+	/// Convert a local sliced position on a plane to voxel coordinates
+	/// </summary>
+	/// <returns> The voxel coordinates </returns>
+	/// <exception cref="ArgumentException"> Thrown when an invalid axis is provided </exception>
 	private Vector3Int ConvertAxisSlicePositionToTerrainCoord(PlaneAxis axis, int localX, int localY, int layerDepth)
 	{
 		switch (axis)
@@ -102,7 +122,10 @@ public class GreedyCubeTerrainGenerator : ITerrainGenerator
 		}
 	}
 
-	private void GreedyEncodeChunk(ref MeshBuffer buffer, Vector3Int offset, ITerrainData data)
+	/// <summary>
+	/// Using the greedy meshing algorithm, encode a chunk of voxels into the mesh buffer. All Top, Bottom, Right, Left, Front, Back faces.
+	/// </summary>
+	private void GreedyEncodeChunk(ref MeshBuffer buffer, Vector3Int offset, IVoxelData data)
 	{
 		GreedyEncodePlane(ref buffer, offset, data, PlaneAxis.YZ, true);
 		GreedyEncodePlane(ref buffer, offset, data, PlaneAxis.XZ, true);
@@ -113,18 +136,26 @@ public class GreedyCubeTerrainGenerator : ITerrainGenerator
 		GreedyEncodePlane(ref buffer, offset, data, PlaneAxis.XY, false);
 	}
 
-	private void GreedyEncodePlane(ref MeshBuffer buffer, Vector3Int offset, ITerrainData data, PlaneAxis axis, bool forward)
+	/// <summary>
+	/// Using the greedy meshing algorithm, encode a plane of voxels into the mesh buffer
+	/// </summary>
+	/// <param name="buffer"> The mesh buffer to encode the plane into </param>
+	/// <param name="offset"> The offset to apply to the plane vertices </param>
+	/// <param name="data"> The voxel data to encode </param>
+	/// <param name="axis"> The axis to encode the plane along </param>
+	/// <param name="forward"> Should the plane be encoded in the forward direction? </param>
+	private void GreedyEncodePlane(ref MeshBuffer buffer, Vector3Int offset, IVoxelData data, PlaneAxis axis, bool forward)
 	{
 		for (int depth = 0; depth < _chunkSize; depth++)
 		{
-			ITerrainData terrainDataCopy = data.Clone();
+			IVoxelData voxelDataCopy = data.Clone();
 
 			for (int localX = 0; localX < _chunkSize; localX++)
 			{
 				for (int localY = 0; localY < _chunkSize; localY++)
 				{
-					bool isVoxelSolid = IsSolidAlongSlice(terrainDataCopy, axis, localX, localY, depth);
-					bool isNextVoxelSolid = IsSolidAlongSlice(terrainDataCopy, axis, localX, localY, depth + (forward ? 1 : -1));
+					bool isVoxelSolid = IsSolidAlongSlice(voxelDataCopy, axis, localX, localY, depth);
+					bool isNextVoxelSolid = IsSolidAlongSlice(voxelDataCopy, axis, localX, localY, depth + (forward ? 1 : -1));
 					bool shouldRenderThisVoxel = isVoxelSolid && !isNextVoxelSolid;
 
 					if (!shouldRenderThisVoxel)
@@ -137,8 +168,8 @@ public class GreedyCubeTerrainGenerator : ITerrainGenerator
 
 					for (int travelX = localX + 1; travelX < _chunkSize; travelX++)
 					{
-						bool isTravelVoxelSolid = IsSolidAlongSlice(terrainDataCopy, axis, travelX, localY, depth);
-						bool isNextTravelVoxelSolid = IsSolidAlongSlice(terrainDataCopy, axis, travelX, localY, depth + (forward ? 1 : -1));
+						bool isTravelVoxelSolid = IsSolidAlongSlice(voxelDataCopy, axis, travelX, localY, depth);
+						bool isNextTravelVoxelSolid = IsSolidAlongSlice(voxelDataCopy, axis, travelX, localY, depth + (forward ? 1 : -1));
 						bool canTravel = isTravelVoxelSolid && !isNextTravelVoxelSolid;
 
 						if (!canTravel)
@@ -149,7 +180,7 @@ public class GreedyCubeTerrainGenerator : ITerrainGenerator
 						// We can travel here, mark it and remove it from the copy data so we don't draw it again
 						maxXFill++;
 						Vector3Int travelVoxel = ConvertAxisSlicePositionToTerrainCoord(axis, travelX, localY, depth);
-						terrainDataCopy.Data[travelVoxel.x, travelVoxel.y, travelVoxel.z] = 0.0f;
+						voxelDataCopy.Data[travelVoxel.x, travelVoxel.y, travelVoxel.z] = 0.0f;
 					}
 
 					//Now that we know how far along the X axis we can travel, we can try and spread along the Y axis
@@ -161,8 +192,8 @@ public class GreedyCubeTerrainGenerator : ITerrainGenerator
 
 						for (int travelX = localX; travelX < localX + maxXFill; travelX++)
 						{
-							bool isTravelVoxelSolid = IsSolidAlongSlice(terrainDataCopy, axis, travelX, travelY, depth);
-							bool isNextTravelVoxelSolid = IsSolidAlongSlice(terrainDataCopy, axis, travelX, travelY, depth + (forward ? 1 : -1));
+							bool isTravelVoxelSolid = IsSolidAlongSlice(voxelDataCopy, axis, travelX, travelY, depth);
+							bool isNextTravelVoxelSolid = IsSolidAlongSlice(voxelDataCopy, axis, travelX, travelY, depth + (forward ? 1 : -1));
 							bool canTravel = isTravelVoxelSolid && !isNextTravelVoxelSolid;
 
 							if (!canTravel)
@@ -182,7 +213,7 @@ public class GreedyCubeTerrainGenerator : ITerrainGenerator
 						// We can travel here, mark it and remove it from the copy data so we don't draw it again
 						foreach (Vector3Int voxel in travelledVoxels)
 						{
-							terrainDataCopy.Data[voxel.x, voxel.y, voxel.z] = 0.0f;
+							voxelDataCopy.Data[voxel.x, voxel.y, voxel.z] = 0.0f;
 						}
 
 						maxYFill++;
@@ -231,6 +262,13 @@ public class GreedyCubeTerrainGenerator : ITerrainGenerator
 		}
 	}
 
+	/// <summary>
+	/// Encodes a quad into the mesh buffer
+	/// </summary>
+	/// <param name="buffer"> The mesh buffer to encode the quad into </param>
+	/// <param name="offset"> The offset to apply to the quad vertices </param>
+	/// <param name="quad"> The quad to encode </param>
+	/// <param name="reverseDirection"> Should the quad be encoded in reverse order (CW/CCW)? Useful to avoid remapping vertices in a seperate call </param>
 	private void EncodeQuad(ref MeshBuffer buffer, Vector3Int offset, Quad quad, bool reverseDirection = false)
 	{
 		if (reverseDirection)
@@ -244,6 +282,14 @@ public class GreedyCubeTerrainGenerator : ITerrainGenerator
 		EncodeTriangle(ref buffer, offset, quad.D, quad.C, quad.A);
 	}
 
+	/// <summary>
+	/// Encodes a triangle into the mesh buffer. Verticies, Normals and Triangles are all updated.
+	/// </summary>
+	/// <param name="buffer"> The mesh buffer to encode the triangle into </param>
+	/// <param name="offset"> The offset to apply to the triangle vertices </param>
+	/// <param name="vertexA"> The first vertex of the triangle (CW) </param>
+	/// <param name="vertexB"> The second vertex of the triangle (CW) </param>
+	/// <param name="vertexC"> The third vertex of the triangle (CW) </param>
 	private void EncodeTriangle(ref MeshBuffer buffer, Vector3Int offset, Vector3Int vertexA, Vector3Int vertexB, Vector3Int vertexC)
 	{
 		buffer.Vertices[buffer.DataStreamPointer + 0] = vertexA + offset;
@@ -254,7 +300,7 @@ public class GreedyCubeTerrainGenerator : ITerrainGenerator
 		buffer.Triangles[buffer.DataStreamPointer + 1] = buffer.DataStreamPointer + 1;
 		buffer.Triangles[buffer.DataStreamPointer + 2] = buffer.DataStreamPointer + 2;
 
-		Vector3 normal = Vector3.Cross(vertexB - vertexA, vertexC - vertexA).normalized; //TODO: This can be precalculated
+		Vector3 normal = Vector3.Cross(vertexB - vertexA, vertexC - vertexA).normalized; //TODO: This can be precalculated, no need to do this math every time
 		buffer.Normals[buffer.DataStreamPointer + 0] = normal;
 		buffer.Normals[buffer.DataStreamPointer + 1] = normal;
 		buffer.Normals[buffer.DataStreamPointer + 2] = normal;
