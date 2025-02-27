@@ -75,3 +75,4 @@ crashlytics-build.properties
 /Assets/Plugins/Sirenix/
 /Packages/com.singularitygroup.hotreload/
 /Assets/Plugins/Sirenix.meta
+.DS_Store
