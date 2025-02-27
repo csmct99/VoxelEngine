@@ -28,4 +28,5 @@ Target: All major desktops should work \[Windows, Mac(Intel, Silicon), Linux\]
 I am using Odin Inspector for the editor tools UI and Hot Reload for faster iteration times.  
 Both of these are paid assets in Unity, I have not included them in the repo for this reason.  
 You will need to either cut out the odin code yourself (its not that bad) or buy the asset and install it on your side.  
+Maybe one day Ill add preprocessor directives to do this automagically but that makes the code pretty icky.
 
