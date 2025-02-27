@@ -20,12 +20,12 @@ If you want, feel free to make any pull requests though as of right now this is 
 - [ ] First pass of terrain shader
 
 # Technical Details
-Unity: Unity 6 (6000.0.X)
-Render Pipeline: Universal Render Pipeline
-Backend: IL2CPP
-Target: All major desktops should work \[Windows, Mac(Intel, Silicon), Linux\]
+Unity: Unity 6 (6000.0.X)  
+Render Pipeline: Universal Render Pipeline  
+Backend: IL2CPP  
+Target: All major desktops should work \[Windows, Mac(Intel, Silicon), Linux\]  
 
-I am using Odin Inspector for the editor tools UI and Hot Reload for faster iteration times. 
-Both of these are paid assets in Unity, I have not included them in the repo for this reason.
-You will need to either cut out the odin code yourself (its not that bad) or buy the asset and install it on your side.
+I am using Odin Inspector for the editor tools UI and Hot Reload for faster iteration times.  
+Both of these are paid assets in Unity, I have not included them in the repo for this reason.  
+You will need to either cut out the odin code yourself (its not that bad) or buy the asset and install it on your side.  
 
