@@ -21,7 +21,7 @@ If you want, feel free to make any pull requests though as of right now this is 
 
 # Technical Details
 Unity: Unity 6 (6000.0.X)  
-Render Pipeline: Universal Render Pipeline  
+Render Pipeline: Built-in Render Pipeline  
 Backend: IL2CPP  
 Target: All major desktops should work \[Windows, Mac(Intel, Silicon), Linux\]  
 
