@@ -35,6 +35,7 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 		mesh.vertices = buffer.Vertices;
 		mesh.triangles = buffer.Triangles;
 		mesh.normals = buffer.Normals;
+		mesh.uv = buffer.UV0;
 
 		mesh.hideFlags = HideFlags.DontSave; // Dont save this to the scene, its a temporary mesh meant to be manually managed
 
@@ -48,6 +49,16 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 		public Vector3Int C; // Top Right
 		public Vector3Int D; // Top Left
 	}
+	
+	private struct FaceID
+	{
+		public const int Top = 0;
+		public const int Bottom = 1;
+		public const int Right = 2;
+		public const int Left = 3;
+		public const int Front = 4;
+		public const int Back = 5;
+	}
 
 	private struct MeshBuffer
 	{
@@ -55,6 +66,7 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 		public Vector3[] Vertices;
 		public int[] Triangles;
 		public Vector3[] Normals;
+		public Vector2[] UV0;
 		
 		public MeshBuffer(int initialSize)
 		{
@@ -62,6 +74,7 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 			Vertices = new Vector3[initialSize];
 			Triangles = new int[initialSize];
 			Normals = new Vector3[initialSize];
+			UV0 = new Vector2[initialSize];
 		}
 
 		public void CleanArrays()
@@ -69,6 +82,7 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 			Array.Resize(ref Vertices, DataStreamPointer);
 			Array.Resize(ref Triangles, DataStreamPointer);
 			Array.Resize(ref Normals, DataStreamPointer);
+			Array.Resize(ref UV0, DataStreamPointer);
 		}
 	}
 	
@@ -221,31 +235,41 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 
 					int xSize = maxXFill;
 					int ySize = maxYFill;
+					
+					int faceID = 0;
 
 					// Encode Quads
 					switch (axis)
 					{
 						case PlaneAxis.XY: // Front / Back 
+							
+							faceID = forward ? FaceID.Front : FaceID.Back;
+							
 							EncodeQuad(ref buffer, offset + Vector3Int.forward * (forward ? 1 : 0), new Quad
 							{
 								A = new Vector3Int(localX, localY, depth),
 								B = new Vector3Int(localX + xSize, localY, depth),
 								C = new Vector3Int(localX + xSize, localY + ySize, depth),
 								D = new Vector3Int(localX, localY + ySize, depth)
-							}, forward);
+							}, faceID, forward);
 							break;
 
 						case PlaneAxis.YZ: // Right / Left
+							
+							faceID = forward ? FaceID.Right : FaceID.Left;
+							
 							EncodeQuad(ref buffer, offset + Vector3Int.right * (forward ? 1 : 0), new Quad
 							{
 								A = new Vector3Int(depth, localY, localX),
 								B = new Vector3Int(depth, localY, localX + xSize),
 								C = new Vector3Int(depth, localY + ySize, localX + xSize),
 								D = new Vector3Int(depth, localY + ySize, localX)
-							}, !forward);
+							}, faceID, !forward);
 							break;
 
 						case PlaneAxis.XZ: // Top / Bottom
+							
+							faceID = forward ? FaceID.Top : FaceID.Bottom;
 
 							// Top
 							EncodeQuad(ref buffer, offset + Vector3Int.up * (forward ? 1 : 0), new Quad
@@ -254,7 +278,7 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 								B = new Vector3Int(localX + xSize, depth, localY),
 								C = new Vector3Int(localX + xSize, depth, localY + ySize),
 								D = new Vector3Int(localX, depth, localY + ySize)
-							}, !forward);
+							}, faceID, !forward);
 							break;
 					}
 				}
@@ -269,17 +293,17 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 	/// <param name="offset"> The offset to apply to the quad vertices </param>
 	/// <param name="quad"> The quad to encode </param>
 	/// <param name="reverseDirection"> Should the quad be encoded in reverse order (CW/CCW)? Useful to avoid remapping vertices in a seperate call </param>
-	private void EncodeQuad(ref MeshBuffer buffer, Vector3Int offset, Quad quad, bool reverseDirection = false)
+	private void EncodeQuad(ref MeshBuffer buffer, Vector3Int offset, Quad quad, int faceID, bool reverseDirection = false)
 	{
 		if (reverseDirection)
 		{
-			EncodeTriangle(ref buffer, offset, quad.A, quad.B, quad.C);
-			EncodeTriangle(ref buffer, offset, quad.A, quad.C, quad.D);
+			EncodeTriangle(ref buffer, faceID, offset, quad.A, quad.B, quad.C);
+			EncodeTriangle(ref buffer, faceID, offset, quad.A, quad.C, quad.D);
 			return;
 		}
 
-		EncodeTriangle(ref buffer, offset, quad.C, quad.B, quad.A);
-		EncodeTriangle(ref buffer, offset, quad.D, quad.C, quad.A);
+		EncodeTriangle(ref buffer, faceID, offset, quad.C, quad.B, quad.A);
+		EncodeTriangle(ref buffer, faceID, offset, quad.D, quad.C, quad.A);
 	}
 
 	/// <summary>
@@ -290,7 +314,7 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 	/// <param name="vertexA"> The first vertex of the triangle (CW) </param>
 	/// <param name="vertexB"> The second vertex of the triangle (CW) </param>
 	/// <param name="vertexC"> The third vertex of the triangle (CW) </param>
-	private void EncodeTriangle(ref MeshBuffer buffer, Vector3Int offset, Vector3Int vertexA, Vector3Int vertexB, Vector3Int vertexC)
+	private void EncodeTriangle(ref MeshBuffer buffer, int faceDir, Vector3Int offset, Vector3Int vertexA, Vector3Int vertexB, Vector3Int vertexC)
 	{
 		buffer.Vertices[buffer.DataStreamPointer + 0] = vertexA + offset;
 		buffer.Vertices[buffer.DataStreamPointer + 1] = vertexB + offset;
@@ -304,6 +328,11 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 		buffer.Normals[buffer.DataStreamPointer + 0] = normal;
 		buffer.Normals[buffer.DataStreamPointer + 1] = normal;
 		buffer.Normals[buffer.DataStreamPointer + 2] = normal;
+		
+		// We also want to encode the face index // TODO: We can surely optimize all this extra data going in
+		buffer.UV0[buffer.DataStreamPointer + 0] = new Vector2(faceDir, faceDir); 
+		buffer.UV0[buffer.DataStreamPointer + 1] = new Vector2(faceDir, faceDir);
+		buffer.UV0[buffer.DataStreamPointer + 2] = new Vector2(faceDir, faceDir);
 
 		buffer.DataStreamPointer += 3; // Move to the next triangle position
 	}

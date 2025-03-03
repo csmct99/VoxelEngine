@@ -23,8 +23,20 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _BottomTexture:
+        m_Texture: {fileID: 2800000, guid: 15c17d799c7fe46fda574d02dbce56cb, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _SideTexture:
+        m_Texture: {fileID: 2800000, guid: a8367f05c207c4b3799572e9713a62a0, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _TopTexture:
+        m_Texture: {fileID: 2800000, guid: b319c05646a9a429c99f83a1250ada26, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
@@ -33,6 +45,6 @@ Material:
     - _Metallic: 0
     m_Colors:
     - _Color: {r: 0.050980393, g: 0.7058824, b: 0.20392157, a: 1}
-    - _TintColor: {r: 0.34373716, g: 0.6792453, b: 0.25952297, a: 1}
+    - _TintColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
