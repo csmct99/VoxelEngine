@@ -3,18 +3,13 @@ using UnityEngine;
 namespace VoxelEngine.DataGenerators
 {
 	/// <summary>
-	/// A simple (and flawed) implementation of a 3D noise generator using Perlin noise. Primarily used for debugging and stress testing purposes.
+	/// A simple (and flawed) implementation of a 3D noise generator using Perlin noise. Primarily used for debugging and
+	/// stress testing purposes.
 	/// <br/><br/>Credit to <a href="https://gist.github.com/tntmeijs/6a3b4587ff7d38a6fa63e13f9d0ac46d">github.com/tntmeijs</a>
 	/// </summary>
 	public class Simple3DNoiseVoxelDataGenerator : IVoxelData
 	{
 		public int Size
-		{
-			get;
-			set;
-		}
-
-		public int ChunkSize
 		{
 			get;
 			set;
@@ -38,7 +33,6 @@ namespace VoxelEngine.DataGenerators
 		{
 			Simple3DNoiseVoxelDataGenerator clone = new();
 			clone.Size = Size;
-			clone.ChunkSize = ChunkSize;
 			clone.Data = Data.Clone() as float[,,];
 			return clone;
 		}
@@ -63,8 +57,7 @@ namespace VoxelEngine.DataGenerators
 
 		public float GetValue(int x, int y, int z)
 		{
-			bool isOutOfBounds = x < 0 || x >= Size || y < 0 || y >= Size || z < 0 || z >= Size;
-			if (isOutOfBounds)
+			if (IsOutOfBounds(x, y, z))
 			{
 				// Return 0 if out of bounds
 				return 0.0f;
@@ -83,8 +76,42 @@ namespace VoxelEngine.DataGenerators
 		{
 			return !IsEmpty(x, y, z);
 		}
-
 		
+		public bool IsOutOfBounds(int x, int y, int z)
+		{
+			return x < 0 || x >= Size || y < 0 || y >= Size || z < 0 || z >= Size;
+		}
+
+		/// <summary>
+		/// Gets a sub-set of the data. XYZ position is the starting point, and the size is the size of the sub-data.
+		/// The coordinates are in the same space as the original data.
+		/// </summary>
+		/// <param name="x"></param>
+		/// <param name="y"></param>
+		/// <param name="z"></param>
+		/// <param name="size"></param>
+		/// <returns></returns>
+		public IVoxelData GetSubData(int x, int y, int z, int size)
+		{
+			Simple3DNoiseVoxelDataGenerator subData = new();
+			subData.Size = size;
+			subData.Data = new float[size, size, size];
+
+			// Copy the data from the original data to the sub-data
+			for (int i = 0; i < size; i++)
+			{
+				for (int j = 0; j < size; j++)
+				{
+					for (int k = 0; k < size; k++)
+					{
+						subData.Data[i, j, k] = GetValue(x + i, y + j, z + k);
+					}
+				}
+			}
+
+			return subData;
+		}
+
 		/// <summary>
 		/// Simple 3D noise generator using Perlin noise
 		/// <br/><br/>Credit to <a href="https://gist.github.com/tntmeijs/6a3b4587ff7d38a6fa63e13f9d0ac46d">github.com/tntmeijs</a>

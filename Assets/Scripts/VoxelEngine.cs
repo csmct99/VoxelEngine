@@ -4,6 +4,7 @@ using Sirenix.OdinInspector;
 
 using UnityEngine;
 
+using VoxelEngine;
 using VoxelEngine.DataGenerators;
 
 namespace DefaultNamespace
@@ -17,7 +18,12 @@ namespace DefaultNamespace
 		private float _lastGenerationTime;
 
 		[SerializeField]
-		private int _size = 32;
+		[PropertyRange("@_chunkSize", 2048)]
+		private int _voxelSpaceSize = 32;
+
+		[SerializeField]
+		[PropertyRange(4, "@_voxelSpaceSize")]
+		private int _chunkSize = 16;
 
 		[SerializeField]
 		private bool _showDebug = true;
@@ -26,7 +32,8 @@ namespace DefaultNamespace
 		private IVoxelData _voxelData;
 
 		[SerializeField]
-		private MeshFilter _meshFilter;
+		[Required]
+		private VoxelMesh _voxelMesh;
 		#endregion
 
 		#region MonoBehaviour Methods
@@ -74,28 +81,13 @@ namespace DefaultNamespace
 		{
 			_voxelData = null;
 			_voxelMeshGenerator = null;
-
-			if (_meshFilter.sharedMesh != null)
-			{
-				if (Application.isPlaying)
-				{
-					Destroy(_meshFilter.sharedMesh);
-				}
-				else
-				{
-					DestroyImmediate(_meshFilter.sharedMesh);
-				}
-
-				_meshFilter.sharedMesh = null;
-			}
 		}
 
 		private void GenerateTerrain()
 		{
-			_voxelData.Size = _size;
+			_voxelData.Size = _voxelSpaceSize;
 			_voxelData.GenerateData();
-
-			_meshFilter.sharedMesh = _voxelMeshGenerator.GenerateMesh(_voxelData);
+			_voxelMesh.GenerateEntireMesh(_voxelMeshGenerator, _voxelData, _chunkSize);
 		}
 
 		private void DrawDebugTerrainData(IVoxelData data)
@@ -104,8 +96,6 @@ namespace DefaultNamespace
 			{
 				return;
 			}
-
-			DrawDebugAxis(new Vector3(-1, 0, -1), 20f);
 
 			// Draw the bounding box
 			Gizmos.color = Color.white;
@@ -117,6 +107,8 @@ namespace DefaultNamespace
 			{
 				return;
 			}
+
+			DrawDebugAxis(new Vector3(-1, 0, -1), 20f);
 
 			// Draw the terrain
 			for (int x = 0; x < data.Size; x++)

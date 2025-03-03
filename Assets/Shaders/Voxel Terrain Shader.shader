@@ -42,19 +42,19 @@ Shader "Unlit/Voxel_Terrain_Shader"
             // Struct for vertex shader input
             struct a2v
             {
-                float4 vertex : POSITION;
-                float3 normal : NORMAL;
+                fixed4 vertex : POSITION;
+                fixed3 normal : NORMAL;
                 fixed faceIndex : TEXCOORD0;
             };
             
             struct v2f
             {
                 fixed4 diff : COLOR0; // diffuse lighting color
-                float4 pos : SV_POSITION;
-                float3 normal : NORMAL;
+                fixed4 pos : SV_POSITION;
+                fixed3 normal : NORMAL;
                 
                 fixed2 faceIndex : TEXCOORD0;
-                half3 worldPos : TEXCOORD1;
+                fixed3 worldPos : TEXCOORD1;
                 SHADOW_COORDS(2) // put shadows data into TEXCOORD2
             };
 
@@ -81,7 +81,7 @@ Shader "Unlit/Voxel_Terrain_Shader"
                 
                 // dot product between normal and light direction for
                 // standard diffuse (Lambert) lighting
-                half normalLight = max(SHADOW_MIN, dot(worldNormal, _WorldSpaceLightPos0.xyz));
+                fixed normalLight = max(SHADOW_MIN, dot(worldNormal, _WorldSpaceLightPos0.xyz));
                 
                 // factor in the light color
                 o.diff = normalLight * _LightColor0;

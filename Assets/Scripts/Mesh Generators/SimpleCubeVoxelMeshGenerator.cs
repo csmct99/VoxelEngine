@@ -7,9 +7,11 @@ public class SimpleCubeVoxelMeshGenerator : IVoxelMeshGenerator
 {
 	private int _chunkSize = 128;
 
-	public Mesh GenerateMesh(IVoxelData data)
+	public Mesh GenerateChunk(IVoxelData data, int chunkSize, Vector3Int chunkPosition)
 	{
-		Mesh mesh = GenerateChunk(data);
+		_chunkSize = chunkSize;
+		IVoxelData chunkData = data.GetSubData(chunkPosition.x, chunkPosition.y, chunkPosition.z, _chunkSize);
+		Mesh mesh = GenerateChunk(chunkData);
 		return mesh;
 	}
 

@@ -10,12 +10,6 @@ public interface IVoxelData
 		set;
 	}
 
-	public int ChunkSize
-	{
-		get;
-		set;
-	}
-
 	public float[,,] Data
 	{
 		get;
@@ -31,12 +25,16 @@ public interface IVoxelData
 	{
 		get;
 	}
-	
+
 	public void GenerateData();
 
 	public float GetValue(int x, int y, int z);
 
 	public bool IsEmpty(int x, int y, int z);
-	
+
 	public bool IsSolid(int x, int y, int z);
+	
+	public bool IsOutOfBounds(int x, int y, int z);
+	
+	public IVoxelData GetSubData(int x, int y, int z, int size);
 }

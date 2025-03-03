@@ -5,6 +5,8 @@ namespace VoxelEngine.DataGenerators
 	/// </summary>
 	public class SimpleDebugVoxelData : IVoxelData
 	{
+		private IVoxelData _voxelDataImplementation;
+
 		public int Size
 		{
 			get;
@@ -83,8 +85,7 @@ namespace VoxelEngine.DataGenerators
 
 		public bool IsEmpty(int x, int y, int z)
 		{
-			bool outOfBounds = x < 0 || y < 0 || z < 0 || x >= Size || y >= Size || z >= Size;
-			if (outOfBounds)
+			if (IsOutOfBounds(x, y, z))
 			{
 				return true;
 			}
@@ -95,6 +96,32 @@ namespace VoxelEngine.DataGenerators
 		public bool IsSolid(int x, int y, int z)
 		{
 			return !IsEmpty(x, y, z);
+		}
+		
+		public bool IsOutOfBounds(int x, int y, int z)
+		{
+			return x < 0 || x >= Size || y < 0 || y >= Size || z < 0 || z >= Size;
+		}
+
+		public IVoxelData GetSubData(int x, int y, int z, int size)
+		{
+			SimpleDebugVoxelData subData = new();
+			subData.Size = size;
+			subData.ChunkSize = ChunkSize;
+			subData.Data = new float[size, size, size];
+
+			for (int i = 0; i < size; i++)
+			{
+				for (int j = 0; j < size; j++)
+				{
+					for (int k = 0; k < size; k++)
+					{
+						subData.Data[i, j, k] = Data[x + i, y + j, z + k];
+					}
+				}
+			}
+
+			return subData;
 		}
 	}
 }
