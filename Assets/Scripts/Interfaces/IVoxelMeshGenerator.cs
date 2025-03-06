@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 using UnityEngine;
 
 /// <summary>
@@ -8,5 +6,5 @@ using UnityEngine;
 /// </summary>
 public interface IVoxelMeshGenerator
 {
-	Mesh GenerateChunk(IVoxelData data, int chunkSize, Vector3Int chunkPosition);
+	Mesh GenerateVoxelMesh(float[] voxelData, int voxelDataWidth, Vector3Int position);
 }

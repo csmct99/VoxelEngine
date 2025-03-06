@@ -6,41 +6,7 @@ using UnityEngine.Rendering;
 
 public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 {
-	private int _chunkSize = 32;
-
-	public Mesh GenerateChunk(IVoxelData data, int chunkSize, Vector3Int chunkPosition)
-	{
-		_chunkSize = chunkSize;
-		Mesh mesh = GenerateChunk(data, chunkPosition);
-		return mesh;
-	}
-
-	private Mesh GenerateChunk(IVoxelData data, Vector3Int chunkPosition)
-	{
-		//TODO: Initializing such a potentially huge data set is not ideal. This should be done in a more dynamic way. Maybe I swap to using Lists in the end.
-		int arraySize = 3 * 6 * 2 * _chunkSize * _chunkSize * _chunkSize; // 36 triangles per cube
-
-		MeshBuffer buffer = new(arraySize);
-
-		GreedyEncodeChunk(ref buffer, chunkPosition, data);
-
-		buffer.CleanArrays(); // Remove empty data from the arrays
-
-		//Assemble the data into the mesh
-		Mesh mesh = new();
-		mesh.name = $"Chunk Mesh ({_chunkSize}x{_chunkSize}x{_chunkSize})";
-
-		mesh.indexFormat = IndexFormat.UInt32; // 4B vertices allowed on unsigned 32-bit. Long term this shouldnt be needed but for early proto its useful.
-
-		mesh.vertices = buffer.Vertices;
-		mesh.triangles = buffer.Triangles;
-		mesh.normals = buffer.Normals;
-		mesh.uv = buffer.UV0;
-
-		mesh.hideFlags = HideFlags.DontSave; // Dont save this to the scene, its a temporary mesh meant to be manually managed
-
-		return mesh;
-	}
+	private int _voxelDataWidth = 32;
 
 	private struct Quad
 	{
@@ -77,7 +43,7 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 			UV0 = new Vector2[initialSize];
 		}
 
-		public void CleanArrays()
+		public void ResizeArrays()
 		{
 			Array.Resize(ref Vertices, DataStreamPointer);
 			Array.Resize(ref Triangles, DataStreamPointer);
@@ -104,13 +70,47 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 		XY
 	}
 
+	public Mesh GenerateVoxelMesh(float[] data, int voxelDataWidth, Vector3Int position)
+	{
+		_voxelDataWidth = voxelDataWidth;
+		Mesh mesh = GenerateMesh(data, position);
+		return mesh;
+	}
+
+	private Mesh GenerateMesh(float[] data, Vector3Int chunkPosition)
+	{
+		//TODO: Initializing such a potentially huge data set is not ideal. This should be done in a more dynamic way. Maybe I swap to using Lists in the end.
+		int arraySize = 3 * 6 * 2 * _voxelDataWidth * _voxelDataWidth * _voxelDataWidth; // 36 triangles per cube
+
+		MeshBuffer buffer = new(arraySize);
+
+		GreedyEncodeVoxelMesh(ref buffer, data);
+
+		buffer.ResizeArrays(); // Remove empty data from the arrays
+
+		//Assemble the data into the mesh
+		Mesh mesh = new();
+		mesh.name = $"Chunk Mesh ({_voxelDataWidth}x{_voxelDataWidth}x{_voxelDataWidth})";
+
+		mesh.indexFormat = IndexFormat.UInt32; // 4B vertices allowed on unsigned 32-bit. Long term this shouldnt be needed but for early proto its useful.
+
+		mesh.vertices = buffer.Vertices;
+		mesh.triangles = buffer.Triangles;
+		mesh.normals = buffer.Normals;
+		mesh.uv = buffer.UV0;
+
+		mesh.hideFlags = HideFlags.DontSave; // Dont save this to the scene, its a temporary mesh meant to be manually managed
+
+		return mesh;
+	}
+
 	/// <summary>
 	/// Check if a voxel is <see cref="IVoxelData.IsSolid(int, int, int)">solid</see> along a slice of a plane
 	/// </summary>
-	private bool IsSolidAlongSlice(IVoxelData voxelData, PlaneAxis axis, int localX, int localY, int layerDepth)
+	private bool IsSolidAlongSlice(float[] voxelData, PlaneAxis axis, int localX, int localY, int layerDepth)
 	{
 		Vector3Int terrainCoord = ConvertAxisSlicePositionToTerrainCoord(axis, localX, localY, layerDepth);
-		return voxelData.IsSolid(terrainCoord.x, terrainCoord.y, terrainCoord.z);
+		return voxelData.IsVoxelSolid(terrainCoord.x, terrainCoord.y, terrainCoord.z, _voxelDataWidth);
 	}
 
 	/// <summary>
@@ -140,19 +140,16 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 	/// Using the greedy meshing algorithm, encode a chunk of voxels into the mesh buffer. All Top, Bottom, Right, Left, Front,
 	/// Back faces.
 	/// </summary>
-	private void GreedyEncodeChunk(ref MeshBuffer buffer, Vector3Int chunkPosition, IVoxelData data)
+	private void GreedyEncodeVoxelMesh(ref MeshBuffer buffer, float[] data)
 	{
-		// Only get the data we need.
-		IVoxelData chunkData = data.GetSubData(chunkPosition.x, chunkPosition.y, chunkPosition.z, _chunkSize);
-		
 		//Encode each face into the mesh buffer
-		GreedyEncodePlane(ref buffer, Vector3Int.zero, chunkData, PlaneAxis.YZ, true);
-		GreedyEncodePlane(ref buffer, Vector3Int.zero, chunkData, PlaneAxis.XZ, true);
-		GreedyEncodePlane(ref buffer, Vector3Int.zero, chunkData, PlaneAxis.XY, true);
+		GreedyEncodePlane(ref buffer, Vector3Int.zero, data, PlaneAxis.YZ, true);
+		GreedyEncodePlane(ref buffer, Vector3Int.zero, data, PlaneAxis.XZ, true);
+		GreedyEncodePlane(ref buffer, Vector3Int.zero, data, PlaneAxis.XY, true);
 
-		GreedyEncodePlane(ref buffer, Vector3Int.zero, chunkData, PlaneAxis.YZ, false);
-		GreedyEncodePlane(ref buffer, Vector3Int.zero, chunkData, PlaneAxis.XZ, false);
-		GreedyEncodePlane(ref buffer, Vector3Int.zero, chunkData, PlaneAxis.XY, false);
+		GreedyEncodePlane(ref buffer, Vector3Int.zero, data, PlaneAxis.YZ, false);
+		GreedyEncodePlane(ref buffer, Vector3Int.zero, data, PlaneAxis.XZ, false);
+		GreedyEncodePlane(ref buffer, Vector3Int.zero, data, PlaneAxis.XY, false);
 	}
 
 	/// <summary>
@@ -163,15 +160,16 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 	/// <param name="chunkData"> The voxel data to encode </param>
 	/// <param name="axis"> The axis to encode the plane along </param>
 	/// <param name="forward"> Should the plane be encoded in the forward direction? </param>
-	private void GreedyEncodePlane(ref MeshBuffer buffer, Vector3Int offset, IVoxelData chunkData, PlaneAxis axis, bool forward)
+	private void GreedyEncodePlane(ref MeshBuffer buffer, Vector3Int offset, float[] chunkData, PlaneAxis axis, bool forward)
 	{
-		for (int depth = 0; depth < chunkData.Size; depth++)
+		for (int depth = 0; depth < _voxelDataWidth; depth++)
 		{
-			IVoxelData chunkDataCopy = chunkData.Clone();
+			float[] chunkDataCopy = new float[chunkData.Length];
+			Array.Copy(chunkData, chunkDataCopy, chunkData.Length);
 
-			for (int localX = 0; localX < chunkDataCopy.Size; localX++)
+			for (int localX = 0; localX < _voxelDataWidth; localX++)
 			{
-				for (int localY = 0; localY < chunkDataCopy.Size; localY++)
+				for (int localY = 0; localY < _voxelDataWidth; localY++)
 				{
 					bool isVoxelSolid = IsSolidAlongSlice(chunkDataCopy, axis, localX, localY, depth);
 					bool isNextVoxelSolid = IsSolidAlongSlice(chunkDataCopy, axis, localX, localY, depth + (forward ? 1 : -1));
@@ -185,7 +183,7 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 					// We know we want to render this voxel, but how far can we spread it?
 					int maxXFill = 1; // This voxel is valid therefore we can travel at least 1 voxel
 
-					for (int travelX = localX + 1; travelX < chunkDataCopy.Size; travelX++)
+					for (int travelX = localX + 1; travelX < _voxelDataWidth; travelX++)
 					{
 						bool isTravelVoxelSolid = IsSolidAlongSlice(chunkDataCopy, axis, travelX, localY, depth);
 						bool isNextTravelVoxelSolid = IsSolidAlongSlice(chunkDataCopy, axis, travelX, localY, depth + (forward ? 1 : -1));
@@ -199,12 +197,12 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 						// We can travel here, mark it and remove it from the copy data so we don't draw it again
 						maxXFill++;
 						Vector3Int travelVoxel = ConvertAxisSlicePositionToTerrainCoord(axis, travelX, localY, depth);
-						chunkDataCopy.Data[travelVoxel.x, travelVoxel.y, travelVoxel.z] = 0.0f; //TODO I should probably have a method for setting like this
+						chunkDataCopy.SetVoxel(travelVoxel.x, travelVoxel.y, travelVoxel.z, _voxelDataWidth, 0.0f);
 					}
 
 					//Now that we know how far along the X axis we can travel, we can try and spread along the Y axis
 					int maxYFill = 1;
-					for (int travelY = localY + 1; travelY < chunkDataCopy.Size; travelY++)
+					for (int travelY = localY + 1; travelY < _voxelDataWidth; travelY++)
 					{
 						bool didBreakOut = false;
 						List<Vector3Int> travelledVoxels = new();
@@ -232,7 +230,7 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 						// We can travel here, mark it and remove it from the copy data so we don't draw it again
 						foreach (Vector3Int voxel in travelledVoxels)
 						{
-							chunkDataCopy.Data[voxel.x, voxel.y, voxel.z] = 0.0f;
+							chunkDataCopy.SetVoxel(voxel.x, voxel.y, voxel.z, _voxelDataWidth, 0.0f);
 						}
 
 						maxYFill++;

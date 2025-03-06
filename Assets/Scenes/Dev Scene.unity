@@ -254,8 +254,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.24565268, y: -0.4600926, z: 0.13377482, w: 0.8426588}
-  m_LocalPosition: {x: 345.64694, y: 264.62546, z: -17.094986}
+  m_LocalRotation: {x: 0.10379305, y: 0.87763953, z: -0.22190545, w: 0.41198772}
+  m_LocalPosition: {x: -66.214485, y: 133.08157, z: 167.94843}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -493,7 +493,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a93dcf69d3cf40e6b6f96e56f0892f13, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _voxelSpaceSize: 128
+  _voxelDataWidth: 128
   _chunkSize: 32
   _showDebug: 0
   _voxelMesh: {fileID: 384801019}

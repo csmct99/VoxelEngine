@@ -22,13 +22,13 @@ namespace VoxelEngine
 		#endregion
 
 		#region Public Methods
-		public void GenerateEntireMesh(IVoxelMeshGenerator meshGenerator, IVoxelData voxelData, int chunkSize)
+		public void GenerateEntireMesh(IVoxelMeshGenerator meshGenerator, float[] voxelData, int voxelDataWidth, int chunkSize)
 		{
 			DeleteMeshChunks();
-			
+
 			// Try to evenly divide the voxel space into chunks (rounding up to ensure we cover the entire space)
-			int chunksPerAxis = Mathf.CeilToInt((float)voxelData.Size / chunkSize);
-			
+			int chunksPerAxis = Mathf.CeilToInt((float) voxelDataWidth / chunkSize);
+
 			for (int x = 0; x < chunksPerAxis; x++)
 			{
 				for (int y = 0; y < chunksPerAxis; y++)
@@ -37,13 +37,22 @@ namespace VoxelEngine
 					{
 						Vector3Int chunkCoordsPosition = new(x, y, z);
 						Vector3Int worldPosition = chunkCoordsPosition * chunkSize;
-						
-						VoxelMeshChunk chunk = CreateMeshChunk($"Chunk {chunkCoordsPosition} ({worldPosition})", worldPosition);
-						chunk.AssignMesh(meshGenerator.GenerateChunk(voxelData, chunkSize, worldPosition));
-						chunk.AssignDebugData(voxelData.GetSubData(worldPosition.x, worldPosition.y, worldPosition.z, chunkSize));
+
+						float[] chunkData = voxelData.ExtractChunkVoxels(worldPosition.x, worldPosition.y, worldPosition.z, chunkSize, voxelDataWidth);
+
+						VoxelMeshChunk chunkMesh = CreateMeshChunk($"Chunk {chunkCoordsPosition} ({worldPosition})", worldPosition);
+
+						Mesh mesh = meshGenerator.GenerateVoxelMesh(chunkData, chunkSize, worldPosition);
+						chunkMesh.AssignMesh(mesh);
+						chunkMesh.AssignDebugData(chunkData, chunkSize);
 					}
 				}
 			}
+		}
+
+		public void WipeMesh()
+		{
+			DeleteMeshChunks();
 		}
 		#endregion
 
@@ -81,9 +90,9 @@ namespace VoxelEngine
 			meshChunkGameObject.AddComponent<MeshFilter>();
 			meshChunkGameObject.AddComponent<MeshRenderer>().sharedMaterial = _masterMaterial;
 			VoxelMeshChunk voxelMeshChunk = meshChunkGameObject.AddComponent<VoxelMeshChunk>();
-			
+
 			_meshChunks.Add(voxelMeshChunk);
-			
+
 			return voxelMeshChunk;
 		}
 		#endregion

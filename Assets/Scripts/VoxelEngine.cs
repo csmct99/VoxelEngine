@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Sirenix.OdinInspector;
 
 using UnityEngine;
+using UnityEngine.Serialization;
 
 using VoxelEngine;
 using VoxelEngine.DataGenerators;
@@ -17,19 +18,21 @@ namespace DefaultNamespace
 		[LabelText("Last Generation (ms)")] // We dont want to save this but we want to see it in the inspector
 		private float _lastGenerationTime;
 
+		[FormerlySerializedAs("_voxelSpaceSize")]
 		[SerializeField]
 		[PropertyRange("@_chunkSize", 2048)]
-		private int _voxelSpaceSize = 32;
+		private int _voxelDataWidth = 32;
 
 		[SerializeField]
-		[PropertyRange(4, "@_voxelSpaceSize")]
+		[PropertyRange(4, "@_voxelDataWidth")]
 		private int _chunkSize = 16;
 
 		[SerializeField]
 		private bool _showDebug = true;
 
 		private IVoxelMeshGenerator _voxelMeshGenerator;
-		private IVoxelData _voxelData;
+		private IVoxelDataGenerator _voxelDataGenerator;
+		private float[] _voxelData;
 
 		[SerializeField]
 		[Required]
@@ -49,7 +52,7 @@ namespace DefaultNamespace
 
 		private void OnDrawGizmos()
 		{
-			DrawDebugTerrainData(_voxelData);
+			DrawDebugTerrainData(_voxelData, _voxelDataWidth);
 		}
 		#endregion
 
@@ -64,8 +67,8 @@ namespace DefaultNamespace
 
 			// Cleanup the old data and generate new ones
 			Cleanup();
+			_voxelDataGenerator = new Simple3DNoiseVoxelDataGenerator();
 			_voxelMeshGenerator = new GreedyCubeVoxelMeshGenerator();
-			_voxelData = new Simple3DNoiseVoxelDataGenerator();
 
 			// Generate the terrain
 			GenerateTerrain();
@@ -73,6 +76,13 @@ namespace DefaultNamespace
 			// Stop measuring time
 			generationTime.Stop();
 			_lastGenerationTime = generationTime.ElapsedMilliseconds;
+		}
+
+		[Button("Wipe Mesh")]
+		public void WipeMesh()
+		{
+			_voxelMesh.WipeMesh();
+			Cleanup();
 		}
 		#endregion
 
@@ -85,24 +95,23 @@ namespace DefaultNamespace
 
 		private void GenerateTerrain()
 		{
-			_voxelData.Size = _voxelSpaceSize;
-			_voxelData.GenerateData();
-			_voxelMesh.GenerateEntireMesh(_voxelMeshGenerator, _voxelData, _chunkSize);
+			_voxelData = _voxelDataGenerator.GenerateData(_voxelDataWidth);
+			_voxelMesh.GenerateEntireMesh(_voxelMeshGenerator, _voxelData, _voxelDataWidth, _chunkSize);
 		}
 
-		private void DrawDebugTerrainData(IVoxelData data)
+		private void DrawDebugTerrainData(float[] voxelData, int size)
 		{
-			if (data == null || !data.IsValid)
+			if (voxelData == null)
 			{
 				return;
 			}
 
 			// Draw the bounding box
 			Gizmos.color = Color.white;
-			Gizmos.DrawWireCube(new Vector3(data.Size / 2, data.Size / 2, data.Size / 2), Vector3.one * data.Size);
+			Gizmos.DrawWireCube(new Vector3(size / 2, size / 2, size / 2), Vector3.one * size);
 
 			//If the data is bigger than 32^3, we don't want to draw all the cubes
-			bool tooBig = data.Size > 32;
+			bool tooBig = size > 32;
 			if (tooBig || !_showDebug)
 			{
 				return;
@@ -111,18 +120,18 @@ namespace DefaultNamespace
 			DrawDebugAxis(new Vector3(-1, 0, -1), 20f);
 
 			// Draw the terrain
-			for (int x = 0; x < data.Size; x++)
+			for (int x = 0; x < size; x++)
 			{
-				for (int y = 0; y < data.Size; y++)
+				for (int y = 0; y < size; y++)
 				{
-					for (int z = 0; z < data.Size; z++)
+					for (int z = 0; z < size; z++)
 					{
-						if (data.IsEmpty(x, y, z))
+						if (voxelData.IsVoxelEmpty(x, y, z, size))
 						{
 							continue;
 						}
 
-						float value = data.GetValue(x, y, z);
+						float value = voxelData.GetVoxel(x, y, z, size);
 						Gizmos.color = new Color(0.1f, 0.1f, 0.1f, Mathf.Clamp01(value)); // Gray scale
 
 						float cubeScale = 0.95f;

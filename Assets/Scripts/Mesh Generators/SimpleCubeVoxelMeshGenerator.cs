@@ -5,36 +5,35 @@ using UnityEngine.Rendering;
 
 public class SimpleCubeVoxelMeshGenerator : IVoxelMeshGenerator
 {
-	private int _chunkSize = 128;
+	private int _voxelDataWidth = 128;
 
-	public Mesh GenerateChunk(IVoxelData data, int chunkSize, Vector3Int chunkPosition)
+	public Mesh GenerateVoxelMesh(float[] data, int voxelDataWidth, Vector3Int position)
 	{
-		_chunkSize = chunkSize;
-		IVoxelData chunkData = data.GetSubData(chunkPosition.x, chunkPosition.y, chunkPosition.z, _chunkSize);
-		Mesh mesh = GenerateChunk(chunkData);
+		_voxelDataWidth = voxelDataWidth;
+		Mesh mesh = GenerateMesh(data);
 		return mesh;
 	}
 
-	private Mesh GenerateChunk(IVoxelData data)
+	private Mesh GenerateMesh(float[] data)
 	{
-		int maxTriangles = 6 * 2 * 3 * _chunkSize * _chunkSize * _chunkSize; // 36 triangles per cube
+		int maxTriangles = 6 * 2 * 3 * _voxelDataWidth * _voxelDataWidth * _voxelDataWidth; // 36 triangles per cube
 		int[] triangles = new int[maxTriangles];
 
-		int maxVertices = 6 * 2 * 3 * _chunkSize * _chunkSize * _chunkSize; // 36 vertices per cube
+		int maxVertices = 6 * 2 * 3 * _voxelDataWidth * _voxelDataWidth * _voxelDataWidth; // 36 vertices per cube
 		Vector3[] vertices = new Vector3[maxVertices];
 
-		int maxNormals = 6 * 2 * 3 * _chunkSize * _chunkSize * _chunkSize;
+		int maxNormals = 6 * 2 * 3 * _voxelDataWidth * _voxelDataWidth * _voxelDataWidth;
 		Vector3[] normals = new Vector3[maxNormals];
 
 		int meshDataStreamPointer = 0;
 
-		for (int x = 0; x < _chunkSize; x++)
+		for (int x = 0; x < _voxelDataWidth; x++)
 		{
-			for (int y = 0; y < _chunkSize; y++)
+			for (int y = 0; y < _voxelDataWidth; y++)
 			{
-				for (int z = 0; z < _chunkSize; z++)
+				for (int z = 0; z < _voxelDataWidth; z++)
 				{
-					if (data.IsEmpty(x, y, z))
+					if (data.IsVoxelEmpty(x, y, z, _voxelDataWidth))
 					{
 						continue;
 					}
@@ -72,10 +71,10 @@ public class SimpleCubeVoxelMeshGenerator : IVoxelMeshGenerator
 	/// <param name="position"></param>
 	/// <param name="vertices"></param>
 	/// <param name="triangles"></param>
-	private void EncodeCube(ref int meshDataStreamPointer, Vector3Int position, ref Vector3[] vertices, ref int[] triangles, ref Vector3[] normals, IVoxelData voxelData)
+	private void EncodeCube(ref int meshDataStreamPointer, Vector3Int position, ref Vector3[] vertices, ref int[] triangles, ref Vector3[] normals, float[] voxelData)
 	{
 		// +Y (Top)
-		if (voxelData.IsEmpty(position.x, position.y + 1, position.z))
+		if (voxelData.IsVoxelEmpty(position.x, position.y + 1, position.z, _voxelDataWidth))
 		{
 			EncodeTriangle(ref meshDataStreamPointer, ref vertices, ref triangles, ref normals, position, new Vector3Int(1, 1, 1), new Vector3Int(1, 1, 0), new Vector3Int(0, 1, 0));
 
@@ -83,7 +82,7 @@ public class SimpleCubeVoxelMeshGenerator : IVoxelMeshGenerator
 		}
 
 		// -Y (Bottom)
-		if (voxelData.IsEmpty(position.x, position.y - 1, position.z))
+		if (voxelData.IsVoxelEmpty(position.x, position.y - 1, position.z, _voxelDataWidth))
 		{
 			EncodeTriangle(ref meshDataStreamPointer, ref vertices, ref triangles, ref normals, position, new Vector3Int(0, 0, 0), new Vector3Int(1, 0, 0), new Vector3Int(1, 0, 1));
 
@@ -91,7 +90,7 @@ public class SimpleCubeVoxelMeshGenerator : IVoxelMeshGenerator
 		}
 
 		// +X (Right)
-		if (voxelData.IsEmpty(position.x + 1, position.y, position.z))
+		if (voxelData.IsVoxelEmpty(position.x + 1, position.y, position.z, _voxelDataWidth))
 		{
 			EncodeTriangle(ref meshDataStreamPointer, ref vertices, ref triangles, ref normals, position, new Vector3Int(1, 0, 0), new Vector3Int(1, 1, 0), new Vector3Int(1, 1, 1));
 
@@ -99,7 +98,7 @@ public class SimpleCubeVoxelMeshGenerator : IVoxelMeshGenerator
 		}
 
 		// -X (Left)
-		if (voxelData.IsEmpty(position.x - 1, position.y, position.z))
+		if (voxelData.IsVoxelEmpty(position.x - 1, position.y, position.z, _voxelDataWidth))
 		{
 			EncodeTriangle(ref meshDataStreamPointer, ref vertices, ref triangles, ref normals, position, new Vector3Int(0, 1, 1), new Vector3Int(0, 1, 0), new Vector3Int(0, 0, 0));
 
@@ -107,7 +106,7 @@ public class SimpleCubeVoxelMeshGenerator : IVoxelMeshGenerator
 		}
 
 		// +Z (Front)
-		if (voxelData.IsEmpty(position.x, position.y, position.z + 1))
+		if (voxelData.IsVoxelEmpty(position.x, position.y, position.z + 1, _voxelDataWidth))
 		{
 			EncodeTriangle(ref meshDataStreamPointer, ref vertices, ref triangles, ref normals, position, new Vector3Int(0, 0, 1), new Vector3Int(1, 0, 1), new Vector3Int(1, 1, 1));
 
@@ -115,7 +114,7 @@ public class SimpleCubeVoxelMeshGenerator : IVoxelMeshGenerator
 		}
 
 		// -Z (Back)
-		if (voxelData.IsEmpty(position.x, position.y, position.z - 1))
+		if (voxelData.IsVoxelEmpty(position.x, position.y, position.z - 1, _voxelDataWidth))
 		{
 			EncodeTriangle(ref meshDataStreamPointer, ref vertices, ref triangles, ref normals, position, new Vector3Int(1, 1, 0), new Vector3Int(1, 0, 0), new Vector3Int(0, 0, 0));
 
