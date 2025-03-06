@@ -13,7 +13,8 @@ If you want, feel free to make any pull requests though as of right now this is 
 - [X] Face culling
 - [X] Greedy meshing
 - [ ] Multi-threaded greedy meshing
-- [ ] Proper chunking of data
+- [X] Proper chunking of data
+- [ ] Option for Automatic LODing
 - [ ] Binary greedy meshing
 - [ ] Lighten the mesh data weight
 - [ ] Record performance metrics
