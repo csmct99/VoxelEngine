@@ -1,7 +1,11 @@
 using System;
 using System.Collections.Generic;
 
+using Unity.Collections;
+using Unity.Profiling;
+
 using UnityEngine;
+using UnityEngine.Profiling;
 using UnityEngine.Rendering;
 
 public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
@@ -29,26 +33,22 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 	private struct MeshBuffer
 	{
 		public int DataStreamPointer;
-		public Vector3[] Vertices;
-		public int[] Triangles;
-		public Vector3[] Normals;
-		public Vector2[] UV0;
+		public Mesh.MeshData MeshData;
 
-		public MeshBuffer(int initialSize)
+		public MeshBuffer(Mesh.MeshData meshData)
 		{
 			DataStreamPointer = 0;
-			Vertices = new Vector3[initialSize];
-			Triangles = new int[initialSize];
-			Normals = new Vector3[initialSize];
-			UV0 = new Vector2[initialSize];
+			MeshData = meshData;
 		}
 
 		public void ResizeArrays()
 		{
-			Array.Resize(ref Vertices, DataStreamPointer);
-			Array.Resize(ref Triangles, DataStreamPointer);
-			Array.Resize(ref Normals, DataStreamPointer);
-			Array.Resize(ref UV0, DataStreamPointer);
+			MeshData.SetIndexBufferParams(DataStreamPointer, IndexFormat.UInt32);
+			MeshData.SetVertexBufferParams(DataStreamPointer, 
+				new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3, 0), //TODO: Reconsider these data types, this is way more than I need
+				new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3, 1),
+				new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2, 2)
+			);
 		}
 	}
 
@@ -70,37 +70,39 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 		XY
 	}
 
-	public Mesh GenerateVoxelMesh(float[] data, int voxelDataWidth, Vector3Int position)
+	public Mesh WriteVoxelDataToMesh(ref Mesh.MeshData meshData, float[] data, int voxelDataWidth)
 	{
 		_voxelDataWidth = voxelDataWidth;
-		Mesh mesh = GenerateMesh(data, position);
-		return mesh;
+		return WriteToMesh(data, ref meshData);
 	}
+	
 
-	private Mesh GenerateMesh(float[] data, Vector3Int chunkPosition)
+	private Mesh WriteToMesh(float[] data, ref Mesh.MeshData meshData)
 	{
 		//TODO: Initializing such a potentially huge data set is not ideal. This should be done in a more dynamic way. Maybe I swap to using Lists in the end.
 		int arraySize = 3 * 6 * 2 * _voxelDataWidth * _voxelDataWidth * _voxelDataWidth; // 36 triangles per cube
 
-		MeshBuffer buffer = new(arraySize);
-
+		meshData.SetIndexBufferParams(arraySize, IndexFormat.UInt32);
+		meshData.SetVertexBufferParams(arraySize, 
+			new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3, 0), //TODO: Reconsider these data types, this is way more than I need
+			new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3, 1),
+			new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2, 2)
+		);
+		
+		MeshBuffer buffer = new(meshData);
 		GreedyEncodeVoxelMesh(ref buffer, data);
 
+		// Finalize data
 		buffer.ResizeArrays(); // Remove empty data from the arrays
-
+		buffer.MeshData.subMeshCount = 1;
+		buffer.MeshData.SetSubMesh(0, new SubMeshDescriptor(0, buffer.DataStreamPointer, MeshTopology.Triangles));
+		
 		//Assemble the data into the mesh
 		Mesh mesh = new();
 		mesh.name = $"Chunk Mesh ({_voxelDataWidth}x{_voxelDataWidth}x{_voxelDataWidth})";
-
-		mesh.indexFormat = IndexFormat.UInt32; // 4B vertices allowed on unsigned 32-bit. Long term this shouldnt be needed but for early proto its useful.
-
-		mesh.vertices = buffer.Vertices;
-		mesh.triangles = buffer.Triangles;
-		mesh.normals = buffer.Normals;
-		mesh.uv = buffer.UV0;
-
+		mesh.indexFormat = IndexFormat.UInt16;
 		mesh.hideFlags = HideFlags.DontSave; // Dont save this to the scene, its a temporary mesh meant to be manually managed
-
+		
 		return mesh;
 	}
 
@@ -322,23 +324,29 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 	/// <param name="vertexC"> The third vertex of the triangle (CW) </param>
 	private void EncodeTriangle(ref MeshBuffer buffer, int faceDir, Vector3Int offset, Vector3Int vertexA, Vector3Int vertexB, Vector3Int vertexC)
 	{
-		buffer.Vertices[buffer.DataStreamPointer + 0] = vertexA + offset;
-		buffer.Vertices[buffer.DataStreamPointer + 1] = vertexB + offset;
-		buffer.Vertices[buffer.DataStreamPointer + 2] = vertexC + offset;
+		//Positions
+		NativeArray<Vector3> positions = buffer.MeshData.GetVertexData<Vector3>(0);
+		positions[buffer.DataStreamPointer + 0] = vertexA + offset;
+		positions[buffer.DataStreamPointer + 1] = vertexB + offset;
+		positions[buffer.DataStreamPointer + 2] = vertexC + offset;
 
-		buffer.Triangles[buffer.DataStreamPointer + 0] = buffer.DataStreamPointer + 0;
-		buffer.Triangles[buffer.DataStreamPointer + 1] = buffer.DataStreamPointer + 1;
-		buffer.Triangles[buffer.DataStreamPointer + 2] = buffer.DataStreamPointer + 2;
+		//Triangles (Index order) just sequential
+		NativeArray<int> indexBuffer = buffer.MeshData.GetIndexData<int>();
+		indexBuffer[buffer.DataStreamPointer + 0] = buffer.DataStreamPointer + 0;
+		indexBuffer[buffer.DataStreamPointer + 1] = buffer.DataStreamPointer + 1;
+		indexBuffer[buffer.DataStreamPointer + 2] = buffer.DataStreamPointer + 2;
 
+		NativeArray<Vector3> normals = buffer.MeshData.GetVertexData<Vector3>(1);
 		Vector3 normal = Vector3.Cross(vertexB - vertexA, vertexC - vertexA).normalized; //TODO: This can be precalculated, no need to do this math every time
-		buffer.Normals[buffer.DataStreamPointer + 0] = normal;
-		buffer.Normals[buffer.DataStreamPointer + 1] = normal;
-		buffer.Normals[buffer.DataStreamPointer + 2] = normal;
+		normals[buffer.DataStreamPointer + 0] = normal;
+		normals[buffer.DataStreamPointer + 1] = normal;
+		normals[buffer.DataStreamPointer + 2] = normal;
 
 		// We also want to encode the face index // TODO: We can surely optimize all this extra data going in
-		buffer.UV0[buffer.DataStreamPointer + 0] = new Vector2(faceDir, faceDir);
-		buffer.UV0[buffer.DataStreamPointer + 1] = new Vector2(faceDir, faceDir);
-		buffer.UV0[buffer.DataStreamPointer + 2] = new Vector2(faceDir, faceDir);
+		NativeArray<Vector2> uv0 = buffer.MeshData.GetVertexData<Vector2>(2);
+		uv0[buffer.DataStreamPointer + 0] = new Vector2(faceDir, faceDir);
+		uv0[buffer.DataStreamPointer + 1] = new Vector2(faceDir, faceDir);
+		uv0[buffer.DataStreamPointer + 2] = new Vector2(faceDir, faceDir);
 
 		buffer.DataStreamPointer += 3; // Move to the next triangle position
 	}

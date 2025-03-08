@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace VoxelEngine
 {
@@ -28,6 +29,14 @@ namespace VoxelEngine
 
 			// Try to evenly divide the voxel space into chunks (rounding up to ensure we cover the entire space)
 			int chunksPerAxis = Mathf.CeilToInt((float) voxelDataWidth / chunkSize);
+			
+			// Make meshes
+			int totalChunks = chunksPerAxis * chunksPerAxis * chunksPerAxis;
+
+			Mesh.MeshDataArray meshDataArray;
+			meshDataArray = Mesh.AllocateWritableMeshData(totalChunks);
+			
+			Mesh[] meshArray = new Mesh[totalChunks];
 
 			for (int x = 0; x < chunksPerAxis; x++)
 			{
@@ -35,18 +44,30 @@ namespace VoxelEngine
 				{
 					for (int z = 0; z < chunksPerAxis; z++)
 					{
+						int index = x + y * chunksPerAxis + z * chunksPerAxis * chunksPerAxis;
 						Vector3Int chunkCoordsPosition = new(x, y, z);
 						Vector3Int worldPosition = chunkCoordsPosition * chunkSize;
 
 						float[] chunkData = voxelData.ExtractChunkVoxels(worldPosition.x, worldPosition.y, worldPosition.z, chunkSize, voxelDataWidth);
-
-						VoxelMeshChunk chunkMesh = CreateMeshChunk($"Chunk {chunkCoordsPosition} ({worldPosition})", worldPosition);
-
-						Mesh mesh = meshGenerator.GenerateVoxelMesh(chunkData, chunkSize, worldPosition);
-						chunkMesh.AssignMesh(mesh);
-						chunkMesh.AssignDebugData(chunkData, chunkSize);
+						VoxelMeshChunk voxelChunkMesh = CreateMeshChunk($"Chunk {chunkCoordsPosition} ({worldPosition})", worldPosition);
+						
+						Mesh.MeshData meshData = meshDataArray[index]; 
+						Mesh mesh = meshGenerator.WriteVoxelDataToMesh(ref meshData,  chunkData, chunkSize);
+						meshArray[index] = mesh;
+						
+						voxelChunkMesh.AssignMesh(mesh);
+						voxelChunkMesh.AssignDebugData(chunkData, chunkSize);
+						
 					}
 				}
+			}
+			
+			//TODO: When we send the mesh update to each renderer, that prob has some overhead. We should try do the write mesh data and then assign the mesh.
+			Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, meshArray, MeshUpdateFlags.DontValidateIndices);
+			
+			for (var i = 0; i < _meshChunks.Count; i++)
+			{
+				meshArray[i].RecalculateBounds();
 			}
 		}
 

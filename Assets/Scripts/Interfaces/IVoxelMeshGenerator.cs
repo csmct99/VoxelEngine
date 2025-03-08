@@ -6,5 +6,5 @@ using UnityEngine;
 /// </summary>
 public interface IVoxelMeshGenerator
 {
-	Mesh GenerateVoxelMesh(float[] voxelData, int voxelDataWidth, Vector3Int position);
+	public Mesh WriteVoxelDataToMesh(ref Mesh.MeshData meshData, float[] voxelData, int voxelDataWidth);
 }
