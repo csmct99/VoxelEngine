@@ -128,20 +128,13 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 	/// <exception cref="ArgumentException"> Thrown when an invalid axis is provided </exception>
 	private Vector3Int ConvertAxisSlicePositionToTerrainCoord(PlaneAxis axis, int localX, int localY, int layerDepth)
 	{
-		switch (axis)
+		return axis switch
 		{
-			case PlaneAxis.YZ:
-				return new Vector3Int(layerDepth, localY, localX);
-
-			case PlaneAxis.XZ:
-				return new Vector3Int(localX, layerDepth, localY);
-
-			case PlaneAxis.XY:
-				return new Vector3Int(localX, localY, layerDepth);
-
-			default:
-				throw new ArgumentException("Invalid axis provided.", nameof(axis));
-		}
+			PlaneAxis.YZ => new Vector3Int(layerDepth, localY, localX),
+			PlaneAxis.XZ => new Vector3Int(localX, layerDepth, localY),
+			PlaneAxis.XY => new Vector3Int(localX, localY, layerDepth),
+			_ => throw new ArgumentException("Invalid axis provided.", nameof(axis))
+		};
 	}
 
 	/// <summary>
