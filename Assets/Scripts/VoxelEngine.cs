@@ -15,8 +15,18 @@ namespace DefaultNamespace
 		#region Private Fields
 		[ShowInInspector]
 		[ReadOnly]
-		[LabelText("Last Generation (ms)")] // We dont want to save this but we want to see it in the inspector
-		private float _lastGenerationTime;
+		[LabelText("Total Generation (ms)")] // We dont want to save this but we want to see it in the inspector
+		private float _lastTotalGenerationTime;
+		
+		[ShowInInspector]
+		[ReadOnly]
+		[LabelText("Data Generation (ms)")]
+		private float _lastDataGenerationTime;
+		
+		[ShowInInspector]
+		[ReadOnly]
+		[LabelText("Mesh Generation (ms)")]
+		private float _lastMeshGenerationTime;
 
 		[FormerlySerializedAs("_voxelSpaceSize")]
 		[SerializeField]
@@ -42,7 +52,7 @@ namespace DefaultNamespace
 		#region MonoBehaviour Methods
 		private void Start()
 		{
-			Restart();
+			Regenerate();
 		}
 
 		private void OnDestroy()
@@ -58,24 +68,31 @@ namespace DefaultNamespace
 
 		#region Public Methods
 		[Button("Regenerate")]
-		public void Restart()
+		public void Regenerate()
 		{
-			// Start measuring time
-			_lastGenerationTime = 0;
-			Stopwatch generationTime = new();
-			generationTime.Start();
-
 			// Cleanup the old data and generate new ones
 			Cleanup();
 			_voxelDataGenerator = new Simple3DNoiseVoxelDataGenerator();
 			_voxelMeshGenerator = new GreedyCubeVoxelMeshGenerator();
+			
+			// Start measuring time - Ignore cleanup time for now.
+			_lastTotalGenerationTime = 0;
+			Stopwatch generationTime = new();
+			generationTime.Start();
 
-			// Generate the terrain
-			GenerateTerrain();
-
-			// Stop measuring time
+			// Generate the data
+			_voxelData = _voxelDataGenerator.GenerateData(_voxelDataWidth);
+			
+			//Measure
+			_lastDataGenerationTime = generationTime.ElapsedMilliseconds;
+			
+			// Generate the mesh
+			GenerateTerrain(false);
+			
+			//Measure
 			generationTime.Stop();
-			_lastGenerationTime = generationTime.ElapsedMilliseconds;
+			_lastMeshGenerationTime = generationTime.ElapsedMilliseconds - _lastDataGenerationTime;
+			_lastTotalGenerationTime = generationTime.ElapsedMilliseconds;
 		}
 
 		[Button("Wipe Mesh")]
@@ -93,9 +110,13 @@ namespace DefaultNamespace
 			_voxelMeshGenerator = null;
 		}
 
-		private void GenerateTerrain()
+		private void GenerateTerrain(bool regenerateData = true)
 		{
-			_voxelData = _voxelDataGenerator.GenerateData(_voxelDataWidth);
+			if (regenerateData)
+			{
+				_voxelData = _voxelDataGenerator.GenerateData(_voxelDataWidth);
+			}
+			
 			_voxelMesh.GenerateEntireMesh(_voxelMeshGenerator, _voxelData, _voxelDataWidth, _chunkSize);
 		}
 
