@@ -5,6 +5,7 @@ namespace VoxelEngine.DataGenerators
 	/// </summary>
 	public class SimpleDebugVoxelData : IVoxelDataGenerator
 	{
+		#region Public Methods
 		public float[] GenerateData(int boundSize)
 		{
 			float[] data = new float[boundSize * boundSize * boundSize];
@@ -13,5 +14,6 @@ namespace VoxelEngine.DataGenerators
 
 			return data;
 		}
+		#endregion
 	}
 }

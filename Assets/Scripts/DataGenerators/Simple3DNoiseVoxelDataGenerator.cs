@@ -9,6 +9,7 @@ namespace VoxelEngine.DataGenerators
 	/// </summary>
 	public class Simple3DNoiseVoxelDataGenerator : IVoxelDataGenerator
 	{
+		#region Public Methods
 		public float[] GenerateData(int boundSize)
 		{
 			// Generate Perlin noise data
@@ -29,7 +30,9 @@ namespace VoxelEngine.DataGenerators
 
 			return data;
 		}
+		#endregion
 
+		#region Private Methods
 		/// <summary>
 		/// Simple 3D noise generator using Perlin noise
 		/// <br/><br/>Credit to <a href="https://gist.github.com/tntmeijs/6a3b4587ff7d38a6fa63e13f9d0ac46d">github.com/tntmeijs</a>
@@ -60,5 +63,6 @@ namespace VoxelEngine.DataGenerators
 			// Use the average of all octaves
 			return noise / octave;
 		}
+		#endregion
 	}
 }

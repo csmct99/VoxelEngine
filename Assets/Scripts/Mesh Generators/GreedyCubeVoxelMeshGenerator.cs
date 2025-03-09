@@ -2,24 +2,37 @@ using System;
 using System.Collections.Generic;
 
 using Unity.Collections;
-using Unity.Profiling;
 
 using UnityEngine;
-using UnityEngine.Profiling;
 using UnityEngine.Rendering;
 
 public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 {
-	private int _voxelDataWidth = 32;
-
-	private struct Quad
+	#region Enumerations
+	private enum PlaneAxis
 	{
-		public Vector3Int A; // Bottom Left
-		public Vector3Int B; // Bottom Right
-		public Vector3Int C; // Top Right
-		public Vector3Int D; // Top Left
-	}
+		/// <summary>
+		/// Left / Right
+		/// </summary>
+		YZ,
 
+		/// <summary>
+		/// Top / Bottom
+		/// </summary>
+		XZ,
+
+		/// <summary>
+		/// Front / Back
+		/// </summary>
+		XY
+	}
+	#endregion
+
+	#region Private Fields
+	private int _voxelDataWidth = 32;
+	#endregion
+
+	#region Structs
 	private struct FaceID
 	{
 		public const int Top = 0;
@@ -52,31 +65,24 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 		}
 	}
 
-	private enum PlaneAxis
+	private struct Quad
 	{
-		/// <summary>
-		/// Left / Right
-		/// </summary>
-		YZ,
-
-		/// <summary>
-		/// Top / Bottom
-		/// </summary>
-		XZ,
-
-		/// <summary>
-		/// Front / Back
-		/// </summary>
-		XY
+		public Vector3Int A; // Bottom Left
+		public Vector3Int B; // Bottom Right
+		public Vector3Int C; // Top Right
+		public Vector3Int D; // Top Left
 	}
+	#endregion
 
+	#region Public Methods
 	public Mesh WriteVoxelDataToMesh(ref Mesh.MeshData meshData, float[] data, int voxelDataWidth)
 	{
 		_voxelDataWidth = voxelDataWidth;
 		return WriteToMesh(data, ref meshData);
 	}
-	
+	#endregion
 
+	#region Private Methods
 	private Mesh WriteToMesh(float[] data, ref Mesh.MeshData meshData)
 	{
 		//TODO: Initializing such a potentially huge data set is not ideal. This should be done in a more dynamic way. Maybe I swap to using Lists in the end.
@@ -96,13 +102,13 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 		buffer.ResizeArrays(); // Remove empty data from the arrays
 		buffer.MeshData.subMeshCount = 1;
 		buffer.MeshData.SetSubMesh(0, new SubMeshDescriptor(0, buffer.DataStreamPointer, MeshTopology.Triangles));
-		
+
 		//Assemble the data into the mesh
 		Mesh mesh = new();
 		mesh.name = $"Chunk Mesh ({_voxelDataWidth}x{_voxelDataWidth}x{_voxelDataWidth})";
 		mesh.indexFormat = IndexFormat.UInt16;
 		mesh.hideFlags = HideFlags.DontSave; // Dont save this to the scene, its a temporary mesh meant to be manually managed
-		
+
 		return mesh;
 	}
 
@@ -350,4 +356,5 @@ public class GreedyCubeVoxelMeshGenerator : IVoxelMeshGenerator
 
 		buffer.DataStreamPointer += 3; // Move to the next triangle position
 	}
+	#endregion
 }

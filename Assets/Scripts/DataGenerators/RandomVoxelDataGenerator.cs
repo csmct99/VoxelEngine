@@ -1,13 +1,12 @@
-using System;
-
 namespace VoxelEngine.DataGenerators
 {
 	public class RandomVoxelDataGenerator : IVoxelDataGenerator
 	{
+		#region Public Methods
 		public float[] GenerateData(int boundSize)
 		{
 			float[] data = new float[boundSize * boundSize * boundSize];
-			
+
 			for (int x = 0; x < boundSize; x++)
 			{
 				for (int y = 0; y < boundSize; y++)
@@ -19,8 +18,9 @@ namespace VoxelEngine.DataGenerators
 					}
 				}
 			}
-			
+
 			return data;
 		}
+		#endregion
 	}
 }

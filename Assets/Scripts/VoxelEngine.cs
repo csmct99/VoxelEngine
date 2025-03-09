@@ -17,12 +17,12 @@ namespace DefaultNamespace
 		[ReadOnly]
 		[LabelText("Total Generation (ms)")] // We dont want to save this but we want to see it in the inspector
 		private float _lastTotalGenerationTime;
-		
+
 		[ShowInInspector]
 		[ReadOnly]
 		[LabelText("Data Generation (ms)")]
 		private float _lastDataGenerationTime;
-		
+
 		[ShowInInspector]
 		[ReadOnly]
 		[LabelText("Mesh Generation (ms)")]
@@ -74,21 +74,20 @@ namespace DefaultNamespace
 			Cleanup();
 			_voxelDataGenerator = new Simple3DNoiseVoxelDataGenerator();
 			_voxelMeshGenerator = new GreedyCubeVoxelMeshGenerator();
-			
+
 			// Start measuring time - Ignore cleanup time for now.
-			_lastTotalGenerationTime = 0;
 			Stopwatch generationTime = new();
 			generationTime.Start();
 
 			// Generate the data
 			_voxelData = _voxelDataGenerator.GenerateData(_voxelDataWidth);
-			
+
 			//Measure
 			_lastDataGenerationTime = generationTime.ElapsedMilliseconds;
-			
+
 			// Generate the mesh
 			GenerateTerrain(false);
-			
+
 			//Measure
 			generationTime.Stop();
 			_lastMeshGenerationTime = generationTime.ElapsedMilliseconds - _lastDataGenerationTime;
@@ -116,7 +115,7 @@ namespace DefaultNamespace
 			{
 				_voxelData = _voxelDataGenerator.GenerateData(_voxelDataWidth);
 			}
-			
+
 			_voxelMesh.GenerateEntireMesh(_voxelMeshGenerator, _voxelData, _voxelDataWidth, _chunkSize);
 		}
 
