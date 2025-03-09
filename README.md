@@ -6,7 +6,7 @@ I consider this project a standalone package though currently its not perfectly 
 
 If you want, feel free to make any pull requests though as of right now this is a solo project.
 
-![Example](https://github.com/csmct99/VoxelEngine/blob/main/PromotionalMaterial/2025-02-27_Example.png?raw=true)
+![Example](https://github.com/csmct99/VoxelEngine/blob/main/PromotionalMaterial/Example.png?raw=true)
 
 # TODO
 - [X] Naive implementation
