@@ -73,7 +73,7 @@ namespace DefaultNamespace
 			// Cleanup the old data and generate new ones
 			Cleanup();
 			_voxelDataGenerator = new Simple3DNoiseVoxelDataGenerator();
-			_voxelMeshGenerator = new GreedyCubeVoxelMeshGenerator();
+			_voxelMeshGenerator = new BinaryGreedyVoxelMeshGenerator();
 
 			// Start measuring time - Ignore cleanup time for now.
 			Stopwatch generationTime = new();
