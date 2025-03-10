@@ -12,10 +12,12 @@ If you want, feel free to make any pull requests though as of right now this is 
 - [X] Naive implementation
 - [X] Face culling
 - [X] Greedy meshing
-- [ ] Multi-threaded greedy meshing
+- [ ] <s>Multi-threaded greedy meshing</s>
+  - Im hugely bound by the mesh generation process so multi threaded the main algo had no impact. Will revisit later    
 - [X] Proper chunking of data
 - [ ] Option for Automatic LODing
-- [ ] Binary greedy meshing
+- [X] Simple per-face binary greedy meshing
+- [ ] Optimized binary greedy meshing
 - [ ] Lighten the mesh data weight
 - [ ] Record performance metrics
 - [ ] First pass of terrain shader
