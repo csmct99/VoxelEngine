@@ -1,6 +1,12 @@
+using JetBrains.Annotations;
+
+using Sirenix.OdinInspector.Editor;
+
+using UnityEditor;
 using UnityEditor.AssetImporters;
 
 using UnityEngine;
+using VoxelEngine.Attributes;
 
 using VoxelEngine.DataGenerators;
 
@@ -12,6 +18,19 @@ namespace VoxelEngine.Importers
 		#region Private Fields
 		[SerializeField]
 		private Material _material;
+		
+		[SerializeField, ReadOnly, UsedImplicitly]
+		private ulong _totalVertices = 0;
+		
+		[SerializeField, ReadOnly, UsedImplicitly]
+		private ulong _totalTriangles = 0;
+		
+		[SerializeField, ReadOnly, UsedImplicitly]
+		private int _totalMeshes = 0;
+		
+		[SerializeField, ReadOnly, UsedImplicitly]
+		private ulong _averageVerticesPerMesh = 0;
+		
 		#endregion
 
 		#region Public Methods
@@ -56,6 +75,8 @@ namespace VoxelEngine.Importers
 			for (int i = 0; i < meshes.Length; i++)
 			{
 				Mesh mesh = meshes[i];
+				
+				_totalVertices += (ulong)mesh.vertexCount;
 
 				bool noVertices = mesh.vertexCount == 0;
 				if (noVertices)
@@ -66,7 +87,12 @@ namespace VoxelEngine.Importers
 				ctx.AddObjectToAsset(gameObjects[i].name, gameObjects[i]);
 				ctx.AddObjectToAsset(mesh.name + i, mesh);
 			}
-
+			
+			// ---- Sum up debug info ----
+			_totalMeshes = meshes.Length;
+			_totalTriangles = _totalVertices / 3ul;
+			_averageVerticesPerMesh = _totalVertices / (ulong)meshes.Length;
+			
 			// Add the main object
 			ctx.AddObjectToAsset("Voxel Mesh", voxelMeshGameObject);
 			ctx.SetMainObject(voxelMeshGameObject);

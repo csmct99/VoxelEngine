@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 897689906f0344514843f13ce1206185
+guid: 0c2df6042c1824d42a2209e541f670cf
 ScriptedImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -9,3 +9,7 @@ ScriptedImporter:
   assetBundleVariant: 
   script: {fileID: 11500000, guid: 816b2dfe92454a9c9a60e7ca5b32155b, type: 3}
   _material: {fileID: 2100000, guid: af48ee385629d44298996d2dc1b4c348, type: 2}
+  _totalVertices: 696510
+  _totalTriangles: 232170
+  _totalMeshes: 64
+  _averageVerticesPerMesh: 10882

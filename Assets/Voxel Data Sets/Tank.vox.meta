@@ -8,4 +8,8 @@ ScriptedImporter:
   assetBundleName: 
   assetBundleVariant: 
   script: {fileID: 11500000, guid: 816b2dfe92454a9c9a60e7ca5b32155b, type: 3}
-  _material: {instanceID: 0}
+  _material: {fileID: -876546973899608171, guid: d314338011f8c4f748729185a3e945c7, type: 3}
+  _totalVertices: 0
+  _totalTriangles: 0
+  _totalMeshes: 0
+  _averageVerticesPerMesh: 16

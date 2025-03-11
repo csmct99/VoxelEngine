@@ -34,6 +34,7 @@ namespace DefaultNamespace
 		[Button("Wipe Mesh")]
 		public void WipeMesh()
 		{
+			DestroyChildren();
 			Cleanup();
 		}
 		#endregion
@@ -48,6 +49,15 @@ namespace DefaultNamespace
 			_voxelMeshGenerator = new BinaryGreedyVoxelMeshGenerator();
 
 			Generate();
+		}
+
+		private void DestroyChildren()
+		{
+			Transform[] children = transform.GetComponentsInChildren<Transform>();
+			for (int i = 1; i < children.Length; i++) //Skip the first one as its likely the parent
+			{
+				DestroyImmediate(children[i].gameObject);
+			}
 		}
 
 		private void Cleanup()
