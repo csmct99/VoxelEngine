@@ -15,11 +15,13 @@ If you want, feel free to make any pull requests though as of right now this is 
 - [ ] <s>Multi-threaded greedy meshing</s>
   - Im hugely bound by the mesh generation process so multi threaded the main algo had no impact. Will revisit later    
 - [X] Proper chunking of data
-- [ ] Option for Automatic LODing
+- [ ] Optional Automatic LODing
 - [X] Simple per-face binary greedy meshing
+- [X] Add support for .vox files (MagicaVoxel) 
 - [ ] Optimized binary greedy meshing
 - [ ] Lighten the mesh data weight
-- [ ] Record performance metrics
+- [X] Record performance metrics
+- [ ] Put performance metrics on github
 - [ ] First pass of terrain shader
 
 # Technical Details

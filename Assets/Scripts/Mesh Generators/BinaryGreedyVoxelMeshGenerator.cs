@@ -84,7 +84,6 @@ public class BinaryGreedyVoxelMeshGenerator : IVoxelMeshGenerator
 		Mesh mesh = new();
 		mesh.name = $"Chunk Mesh ({_voxelDataWidth}x{_voxelDataWidth}x{_voxelDataWidth})";
 		mesh.indexFormat = IndexFormat.UInt16;
-		mesh.hideFlags = HideFlags.DontSave; // Dont save this to the scene, its a temporary mesh meant to be manually managed
 
 		return mesh;
 	}

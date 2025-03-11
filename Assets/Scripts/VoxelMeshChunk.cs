@@ -8,17 +8,18 @@ namespace VoxelEngine
 	public class VoxelMeshChunk : MonoBehaviour
 	{
 		#region Private Fields
-		[ShowInInspector]
+		[SerializeField]
 		[ReadOnly]
 		private Mesh _mesh;
 
 		[ShowIf("@_showDebug")]
-		[ShowInInspector]
+		[SerializeField]
 		private bool _showDebug = false;
 
 		private float[] _chunkData;
 		private int _chunkSize;
 
+		[SerializeField]
 		private MeshFilter _meshFilter;
 		#endregion
 

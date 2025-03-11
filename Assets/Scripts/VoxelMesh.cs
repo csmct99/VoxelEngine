@@ -15,6 +15,20 @@ namespace VoxelEngine
 		private Material _masterMaterial;
 		#endregion
 
+		#region Properties
+		public Material MasterMaterial
+		{
+			get
+			{
+				return _masterMaterial;
+			}
+			set
+			{
+				_masterMaterial = value;
+			}
+		}
+		#endregion
+
 		#region MonoBehaviour Methods
 		private void OnDestroy()
 		{
@@ -23,7 +37,12 @@ namespace VoxelEngine
 		#endregion
 
 		#region Public Methods
-		public void GenerateEntireMesh(IVoxelMeshGenerator meshGenerator, float[] voxelData, int voxelDataWidth, int chunkSize)
+		public List<GameObject> GenerateEntireMesh(IVoxelMeshGenerator meshGenerator, float[] voxelData, int voxelDataWidth, int chunkSize)
+		{
+			return GenerateEntireMesh(meshGenerator, voxelData, voxelDataWidth, chunkSize, out _);
+		}
+
+		public List<GameObject> GenerateEntireMesh(IVoxelMeshGenerator meshGenerator, float[] voxelData, int voxelDataWidth, int chunkSize, out Mesh[] meshes)
 		{
 			DeleteMeshChunks();
 
@@ -68,6 +87,9 @@ namespace VoxelEngine
 			{
 				meshArray[i].RecalculateBounds();
 			}
+
+			meshes = meshArray;
+			return new List<GameObject>(_meshChunks.ConvertAll(chunk => chunk.gameObject));
 		}
 
 		public void WipeMesh()

@@ -10,7 +10,7 @@ using VoxelEngine.DataGenerators;
 
 namespace DefaultNamespace
 {
-	public class VoxelEngine : MonoBehaviour
+	public class VoxelRenderer : MonoBehaviour
 	{
 		#region Private Fields
 		[ShowInInspector]
@@ -49,17 +49,69 @@ namespace DefaultNamespace
 		private VoxelMesh _voxelMesh;
 		#endregion
 
+		#region Properties
+		public IVoxelMeshGenerator VoxelMeshGenerator
+		{
+			get
+			{
+				return _voxelMeshGenerator;
+			}
+			set
+			{
+				_voxelMeshGenerator = value;
+			}
+		}
+
+		public IVoxelDataGenerator VoxelDataGenerator
+		{
+			get
+			{
+				return _voxelDataGenerator;
+			}
+			set
+			{
+				_voxelDataGenerator = value;
+			}
+		}
+
+		public VoxelMesh VoxelMesh
+		{
+			get
+			{
+				return _voxelMesh;
+			}
+			set
+			{
+				_voxelMesh = value;
+			}
+		}
+
+		public int VoxelDataWidth
+		{
+			get
+			{
+				return _voxelDataWidth;
+			}
+			set
+			{
+				_voxelDataWidth = value;
+			}
+		}
+
+		public int ChunkSize
+		{
+			get
+			{
+				return _chunkSize;
+			}
+			set
+			{
+				_chunkSize = value;
+			}
+		}
+		#endregion
+
 		#region MonoBehaviour Methods
-		private void Start()
-		{
-			Regenerate();
-		}
-
-		private void OnDestroy()
-		{
-			Cleanup();
-		}
-
 		private void OnDrawGizmos()
 		{
 			DrawDebugTerrainData(_voxelData, _voxelDataWidth);
@@ -67,14 +119,8 @@ namespace DefaultNamespace
 		#endregion
 
 		#region Public Methods
-		[Button("Regenerate")]
-		public void Regenerate()
+		public void Generate()
 		{
-			// Cleanup the old data and generate new ones
-			Cleanup();
-			_voxelDataGenerator = new Simple3DNoiseVoxelDataGenerator();
-			_voxelMeshGenerator = new BinaryGreedyVoxelMeshGenerator();
-
 			// Start measuring time - Ignore cleanup time for now.
 			Stopwatch generationTime = new();
 			generationTime.Start();
@@ -103,6 +149,17 @@ namespace DefaultNamespace
 		#endregion
 
 		#region Private Methods
+		[Button("Regenerate")]
+		private void StartFromEditor()
+		{
+			// Cleanup the old data and generate new ones
+			Cleanup();
+			_voxelDataGenerator = new Simple3DNoiseVoxelDataGenerator();
+			_voxelMeshGenerator = new BinaryGreedyVoxelMeshGenerator();
+
+			Generate();
+		}
+
 		private void Cleanup()
 		{
 			_voxelData = null;
