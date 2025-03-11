@@ -9,20 +9,28 @@ namespace VoxelEngine.DataGenerators
 	/// </summary>
 	public class Simple3DNoiseVoxelDataGenerator : IVoxelDataGenerator
 	{
+		#region Properties
+		public int VoxelDataSetWidth
+		{
+			get;
+			set;
+		}
+		#endregion
+
 		#region Public Methods
-		public float[] GenerateData(int boundSize)
+		public float[] GenerateData()
 		{
 			// Generate Perlin noise data
-			float[] data = new float[boundSize * boundSize * boundSize];
+			float[] data = new float[VoxelDataSetWidth * VoxelDataSetWidth * VoxelDataSetWidth];
 
 			// Go through each position in the 3D array
-			for (int x = 0; x < boundSize; x++)
+			for (int x = 0; x < VoxelDataSetWidth; x++)
 			{
-				for (int y = 0; y < boundSize; y++)
+				for (int y = 0; y < VoxelDataSetWidth; y++)
 				{
-					for (int z = 0; z < boundSize; z++)
+					for (int z = 0; z < VoxelDataSetWidth; z++)
 					{
-						int index = data.GetVoxelIndex(x, y, z, boundSize);
+						int index = data.GetVoxelIndex(x, y, z, VoxelDataSetWidth);
 						data[index] = SimplexNoise3D(x, y, z, 0.03f, 1.0f, 0.5f, 1, 0); //TODO: Expose these params in editor
 					}
 				}
@@ -64,5 +72,10 @@ namespace VoxelEngine.DataGenerators
 			return noise / octave;
 		}
 		#endregion
+
+		public Simple3DNoiseVoxelDataGenerator(int voxelDataSetWidth)
+		{
+			VoxelDataSetWidth = voxelDataSetWidth;
+		}
 	}
 }

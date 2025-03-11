@@ -7,17 +7,26 @@ namespace VoxelEngine.DataGenerators
 	/// </summary>
 	public class SimpleDebugVoxelData : IVoxelDataGenerator
 	{
-		#region Public Methods
-		public float[] GenerateData(int boundSize)
+		#region Properties
+		public int VoxelDataSetWidth
 		{
-			float[] data = new float[boundSize * boundSize * boundSize];
+			get;
+			private set;
+		}
+		#endregion
 
-			AddTestData(ref data, new Vector3Int(0, 0, 0), boundSize);
-			AddTestData(ref data, new Vector3Int(32, 0, 0), boundSize);
-			AddTestData(ref data, new Vector3Int(0, 32, 0), boundSize);
-			AddTestData(ref data, new Vector3Int(32, 0, 32), boundSize);
-			AddTestData(ref data, new Vector3Int(32, 32, 0), boundSize);
-			AddTestData(ref data, new Vector3Int(32, 32, 32), boundSize);
+		#region Public Methods
+		public float[] GenerateData()
+		{
+			VoxelDataSetWidth = 32;
+			float[] data = new float[VoxelDataSetWidth * VoxelDataSetWidth * VoxelDataSetWidth];
+
+			AddTestData(ref data, new Vector3Int(0, 0, 0), VoxelDataSetWidth);
+			AddTestData(ref data, new Vector3Int(32, 0, 0), VoxelDataSetWidth);
+			AddTestData(ref data, new Vector3Int(0, 32, 0), VoxelDataSetWidth);
+			AddTestData(ref data, new Vector3Int(32, 0, 32), VoxelDataSetWidth);
+			AddTestData(ref data, new Vector3Int(32, 32, 0), VoxelDataSetWidth);
+			AddTestData(ref data, new Vector3Int(32, 32, 32), VoxelDataSetWidth);
 
 			return data;
 		}

@@ -36,18 +36,24 @@ namespace VoxelEngine.DataGenerators
 				return Mathf.Max(_voxelBounds.x, _voxelBounds.y, _voxelBounds.z);
 			}
 		}
+
+		public int VoxelDataSetWidth
+		{
+			get;
+			private set;
+		}
 		#endregion
 
 		#region Public Methods
-		public float[] GenerateData(int boundSize)
+		public float[] GenerateData()
 		{
-			boundSize = LargestDimension; // Since this is an imported voxel data, we really shouldnt change the size of the voxel data
+			VoxelDataSetWidth = LargestDimension; // Since this is an imported voxel data, we really shouldnt change the size of the voxel data
 			ReadFile();
 
 			bool[] voxels = _voxFileData.xyzi.FlattenData(LargestDimension);
 
 			//Convert bool[] to float[] //TODO: This is pretty icky, when the voxel data is more evolved, this can be abstracted better
-			float[] data = new float[boundSize * boundSize * boundSize];
+			float[] data = new float[VoxelDataSetWidth * VoxelDataSetWidth * VoxelDataSetWidth];
 			for (int i = 0; i < voxels.Length; i++)
 			{
 				data[i] = voxels[i] ? 1 : 0;
@@ -62,6 +68,7 @@ namespace VoxelEngine.DataGenerators
 			{
 				_voxFileData = new VoxFileData(Path);
 				_voxelBounds = _voxFileData.size.ModelSize;
+				VoxelDataSetWidth = Mathf.Max(LargestDimension, 32);
 			}
 		}
 		#endregion

@@ -1,4 +1,9 @@
 public interface IVoxelDataGenerator
 {
-	public float[] GenerateData(int boundSize);
+	public float[] GenerateData();
+
+	public int VoxelDataSetWidth
+	{
+		get;
+	}
 }
