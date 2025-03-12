@@ -1,5 +1,10 @@
+using System.Collections.Generic;
+using System.Diagnostics;
+
 using UnityEngine;
 using UnityEngine.Rendering;
+
+using Debug = System.Diagnostics.Debug;
 
 namespace VoxelEngine
 {
@@ -7,11 +12,14 @@ namespace VoxelEngine
 	{
 		#region Constants
 		public const int ChunkSize = 32;
+		public static bool MeasurePerformance = true;
+		private static Stopwatch MeasurementStopwatch = new();
 		#endregion
 
 		#region Public Methods
 		public static GameObject[] AssignMeshesToGameObjects(Mesh[] meshes, Vector3Int[] worldPositions, Transform parent, Material material = null)
 		{
+			StartMeasuring();
 			GameObject[] gameObjects = new GameObject[meshes.Length];
 
 			//Check if a material was assigned, if not make a new one
@@ -26,6 +34,7 @@ namespace VoxelEngine
 			{
 				gameObjects[i] = CreateGameObjectWithMesh(meshes[i], worldPositions[i], material, parent);
 			}
+			FinishMeasuring("GameObject Creation");	
 
 			return gameObjects;
 		}
@@ -38,9 +47,13 @@ namespace VoxelEngine
 
 		public static void CreateMeshesFromVoxelData(IVoxelDataGenerator voxelDataGenerator, IVoxelMeshGenerator meshGenerator, out Mesh[] allMeshes, out Vector3Int[] meshWorldPositions)
 		{
+			StartMeasuring();
+
 			// Generate the data
 			float[] voxelData = voxelDataGenerator.GenerateData();
-
+			
+			FinishMeasuring("Data Generation");
+			StartMeasuring();
 			// Try to evenly divide the voxel space into chunks (rounding up to ensure we cover the entire space)
 			int chunksPerAxis = Mathf.CeilToInt((float) voxelDataGenerator.VoxelDataSetWidth / ChunkSize);
 
@@ -77,6 +90,8 @@ namespace VoxelEngine
 			{
 				allMeshes[i].RecalculateBounds(); // For some reason I have to manually do this even when the flag is set to do it.
 			}
+			
+			FinishMeasuring("Mesh Generation");
 		}
 		#endregion
 
@@ -93,6 +108,24 @@ namespace VoxelEngine
 			renderer.shadowCastingMode = ShadowCastingMode.TwoSided;
 
 			return go;
+		}
+
+		private static void StartMeasuring()
+		{
+			if (MeasurePerformance)
+			{
+				MeasurementStopwatch.Restart();
+			}
+		}
+		
+		private static void FinishMeasuring(string testName)
+		{
+			if (MeasurePerformance)
+			{
+				MeasurementStopwatch.Stop();
+				string message = $"{testName.ToString().PadRight(20)} | {MeasurementStopwatch.ElapsedMilliseconds.ToString().PadLeft(7)}ms";
+				UnityEngine.Debug.Log(message);	
+			}
 		}
 		#endregion
 	}

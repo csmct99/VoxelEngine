@@ -31,6 +31,19 @@ namespace DefaultNamespace
 			VoxelMeshFactory.CreateGameobjectsFromMeshData(_voxelDataGenerator, _voxelMeshGenerator, transform, _material);
 		}
 
+		[Button("Regenerate")]
+		public void StartFromEditor()
+		{
+			// Cleanup the old data and generate new ones
+			Cleanup();
+			DestroyChildren();
+			
+			_voxelDataGenerator = new TerrainVoxelDataGenerator(_voxelDataWidth);
+			_voxelMeshGenerator = new BinaryGreedyVoxelMeshGenerator();
+
+			Generate();
+		}
+		
 		[Button("Wipe Mesh")]
 		public void WipeMesh()
 		{
@@ -40,17 +53,6 @@ namespace DefaultNamespace
 		#endregion
 
 		#region Private Methods
-		[Button("Regenerate")]
-		private void StartFromEditor()
-		{
-			// Cleanup the old data and generate new ones
-			Cleanup();
-			_voxelDataGenerator = new Simple3DNoiseVoxelDataGenerator(_voxelDataWidth);
-			_voxelMeshGenerator = new BinaryGreedyVoxelMeshGenerator();
-
-			Generate();
-		}
-
 		private void DestroyChildren()
 		{
 			Transform[] children = transform.GetComponentsInChildren<Transform>();
